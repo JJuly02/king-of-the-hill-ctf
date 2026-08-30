@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>King of the Hill CTF</title>
+<meta name="description" content="A self-hostable King of the Hill CTF: four intentionally vulnerable hills plus a pure-stdlib scoreboard, beacon agent, and deploy scripts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#07090f;--surface:#0d1420;--surface2:#0a1018;--border:#1a2d45;--border2:#24405e;
+ --accent:#00e5ff;--accent2:#ff3c6e;--ok:#00e676;--warn:#ffa726;--text:#dbe7f2;--dim:#5b7da3;
+ --mono:'Share Tech Mono',ui-monospace,SFMono-Regular,monospace;
+ --sans:'Rajdhani','Segoe UI',system-ui,sans-serif;
+ --glow:0 0 16px rgba(0,229,255,.45);--glow-sm:0 0 8px rgba(0,229,255,.3);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+ margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
+ background-image:
+  radial-gradient(1200px 520px at 50% -160px,rgba(0,229,255,.10),transparent 70%),
+  linear-gradient(rgba(26,45,69,.16) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(26,45,69,.16) 1px,transparent 1px);
+ background-size:100% 100%,46px 46px,46px 46px;background-attachment:fixed;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 22px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-shadow:var(--glow-sm)}
+code{font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--accent);font-size:.92em}
+
+/* hero */
+header.hero{padding:80px 22px 54px;text-align:center;position:relative}
+header.hero:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5}
+.crown{width:96px;height:96px;filter:drop-shadow(0 0 18px rgba(0,229,255,.4));margin-bottom:20px}
+h1{font-family:var(--mono);font-weight:400;font-size:clamp(30px,6vw,54px);letter-spacing:5px;margin:0;color:#fff;text-shadow:var(--glow)}
+.tag{font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-size:14px;margin-top:10px}
+.lead{max-width:680px;margin:22px auto 0;color:var(--text);font-size:18px}
+.cta{margin-top:30px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:13px;letter-spacing:1.5px;text-transform:uppercase;
+ border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:12px 22px;transition:background .15s,box-shadow .15s}
+.btn:hover{background:rgba(0,229,255,.12);box-shadow:var(--glow-sm);text-shadow:none}
+.btn.ghost{border-color:var(--border2);color:var(--dim)}
+.btn.ghost:hover{color:var(--text);background:rgba(255,255,255,.03);box-shadow:none}
+.badges{margin-top:26px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.badge{font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--dim);border:1px solid var(--border);border-radius:20px;padding:5px 13px;background:rgba(0,229,255,.03)}
+
+section{padding:56px 0}
+h2{font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:2.5px;color:var(--accent);text-shadow:var(--glow-sm);
+ display:flex;align-items:center;gap:10px;margin:0 0 24px}
+h2:before{content:"";width:3px;height:15px;background:var(--accent);box-shadow:var(--glow-sm);border-radius:2px}
+p.sub{color:var(--dim);max-width:720px;margin:-12px 0 26px}
+
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:800px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:8px;padding:20px 22px;
+ box-shadow:0 10px 34px -22px rgba(0,0,0,.85)}
+.card h3{margin:0 0 6px;font-size:19px;letter-spacing:.4px;color:#fff}
+.card .k{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.card p{margin:0;color:var(--text)}
+.card .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.pill{font-family:var(--mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);border:1px solid var(--border2);border-radius:5px;padding:3px 9px}
+.pill.a{color:var(--accent);border-color:rgba(0,229,255,.35)}
+
+.feat{display:flex;gap:14px;align-items:flex-start}
+.feat .dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);margin-top:9px}
+.feat h4{margin:0 0 3px;font-size:16px;color:#fff;letter-spacing:.3px}
+.feat p{margin:0;color:var(--dim);font-size:15px}
+
+pre{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;
+ padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:13.5px;color:var(--text);line-height:1.7}
+pre .c{color:var(--dim)}
+pre .a{color:var(--accent)}
+
+.note{background:rgba(255,60,110,.06);border:1px solid rgba(255,60,110,.28);border-left:3px solid var(--accent2);border-radius:8px;padding:18px 20px}
+.note b{color:var(--accent2)}
+
+footer{padding:40px 22px 60px;text-align:center;color:var(--dim);font-size:13px;border-top:1px solid var(--border);margin-top:20px}
+footer .mono{font-family:var(--mono);letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+ <svg class="crown" viewBox="0 0 120 120" role="img" aria-label="crown">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ff4ff"/><stop offset="1" stop-color="#00b8d4"/></linearGradient></defs>
+  <path d="M18 82 L13 39 L39 60 L60 25 L81 60 L107 39 L102 82 Z" fill="url(#g)" stroke="#00e5ff" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="18" y="85" width="84" height="15" rx="3" fill="url(#g)" stroke="#00e5ff" stroke-width="3"/>
+  <circle cx="13" cy="39" r="6" fill="#bff8ff"/><circle cx="60" cy="24" r="7" fill="#bff8ff"/><circle cx="107" cy="39" r="6" fill="#bff8ff"/>
+ </svg>
+ <h1>KING OF THE HILL</h1>
+ <div class="tag">A self-hostable attack-and-defend CTF</div>
+ <p class="lead">Several machines, each running a vulnerable service. Break in, escalate to root,
+ plant your team beacon, and hold the box while everyone else tries to take it from you.</p>
+ <div class="cta">
+  <a class="btn" href="https://github.com/JJuly02/king-of-the-hill-ctf">View on GitHub</a>
+  <a class="btn ghost" href="#quickstart">Quick start</a>
+ </div>
+ <div class="badges">
+  <span class="badge">Pure Python stdlib</span>
+  <span class="badge">Zero dependencies</span>
+  <span class="badge">4 hills + scoreboard</span>
+  <span class="badge">Docker</span>
+ </div>
+</header>
+
+<div class="wrap">
+
+<section id="about">
+ <h2>What it is</h2>
+ <p class="sub">King of the Hill is attack-and-defend. Points accrue for the time you hold a hill
+ (a periodic tick) plus captured flags and first bloods. The entry vulnerability and the
+ privilege-escalation path are restored on a schedule, so a box can never be permanently
+ patched shut. Defense has to be active: monitor, kick other teams' sessions, and overwrite
+ their beacon.</p>
+ <div class="grid g3">
+  <div class="feat"><span class="dot"></span><div><h4>Scoreboard</h4><p>Collector, tick engine, SLA prober, flag service with first blood, live dashboard, team portal, and a green-team admin panel. SQLite + http.server + HMAC.</p></div></div>
+  <div class="feat"><span class="dot"></span><div><h4>Beacon agent</h4><p>Runs on a hill, reads <code>/root/king.txt</code>, validates it, signs a report, and reports the owner to the scoreboard.</p></div></div>
+  <div class="feat"><span class="dot"></span><div><h4>Deploy scripts</h4><p>Bring the scoreboard and the hills up on real machines over SSH, or run the whole thing locally with Docker.</p></div></div>
+ </div>
+</section>
+
+<section id="hills">
+ <h2>The four hills</h2>
+ <p class="sub">Each hill is a self-contained vulnerable box: a foothold vulnerability, then a
+ local privilege escalation to root. Every one is verified end to end by the smoke test.</p>
+ <div class="grid g2">
+  <div class="card">
+   <div class="k">Hill 1 // NetOps Console</div>
+   <h3>Command injection</h3>
+   <p>A network-diagnostics panel runs connectivity checks on a value you supply. It reaches a shell.</p>
+   <div class="meta"><span class="pill a">foothold: cmd injection</span><span class="pill">privesc: sudo find</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 2 // MathLab Compute</div>
+   <h3>Unsandboxed eval()</h3>
+   <p>An online calculator evaluates expressions server-side with no sandbox, so the field is code execution.</p>
+   <div class="meta"><span class="pill a">foothold: eval RCE</span><span class="pill">privesc: SUID bash</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 3 // CacheCTL Admin</div>
+   <h3>Admin-login brute force</h3>
+   <p>An admin panel with a weak password from common wordlists; the post-login console runs commands.</p>
+   <div class="meta"><span class="pill a">foothold: brute + console</span><span class="pill">privesc: writable root cron</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 4 // BuildHub CI</div>
+   <h3>Weak creds, hidden console</h3>
+   <p>A CI script console is unlinked from the UI and behind weak HTTP auth. Find it, authenticate, run code.</p>
+   <div class="meta"><span class="pill a">foothold: weak creds</span><span class="pill">privesc: sudo tar</span></div>
+  </div>
+ </div>
+</section>
+
+<section id="quickstart">
+ <h2>Quick start</h2>
+ <p class="sub">One host with Docker. Bring up the four hills, then run the scoreboard against the sample config.</p>
+<pre><span class="c"># bring up the four vulnerable hills</span>
+for d in deploy/hills/*/; do (cd "$d" &amp;&amp; docker compose up -d --build); done
+
+<span class="c"># run the scoreboard (hills reachable on 8081-8084)</span>
+cd scoreboard
+KOTH_CONFIG_DIR=../config KOTH_FLAGS=../flags/flags.json \
+KOTH_BIND=0.0.0.0:8000 KOTH_ADMIN_KEY=<span class="a">change-me</span> KOTH_TEAM_PASS=<span class="a">change-me</span> \
+python3 scoreboard.py
+
+<span class="c"># open the scoreboard, team portal, and green-team panel</span>
+<span class="a">http://localhost:8000/</span>        <span class="c"># scoreboard + team login</span>
+<span class="a">http://localhost:8000/team</span>    <span class="c"># reveal your beacon by access code</span>
+<span class="a">http://localhost:8000/admin</span>   <span class="c"># green-team control (pause, rotate, revert, adjust)</span></pre>
+ <p class="sub" style="margin-top:20px">Want a scripted demo without deploying anything? <code>python3 poc/simulate.py</code> runs the
+ scoring scenarios end to end. To verify the challenges, <code>bash deploy/smoke-test.sh</code>.</p>
+</section>
+
+<section id="docs">
+ <h2>Documentation</h2>
+ <div class="grid g3">
+  <a class="card" href="https://github.com/JJuly02/king-of-the-hill-ctf/blob/main/README.md"><div class="k">Start here</div><h3>README</h3><p>What it is, how to run it locally, project layout, and configuration.</p></a>
+  <a class="card" href="https://github.com/JJuly02/king-of-the-hill-ctf/blob/main/DEPLOY.md"><div class="k">Multi-machine</div><h3>DEPLOY</h3><p>One VM per hill plus an ops VM, network layout, reset levels, and green-team control.</p></a>
+  <a class="card" href="https://github.com/JJuly02/king-of-the-hill-ctf/blob/main/SOLUTIONS.md"><div class="k">Spoilers</div><h3>SOLUTIONS</h3><p>Full walkthroughs for every hill, the flags, and the anti-automation notes.</p></a>
+ </div>
+</section>
+
+<section id="safety">
+ <h2>Before you run it</h2>
+ <div class="note">
+  <p><b>Everything here is intentionally vulnerable.</b> It is meant for an isolated lab
+  or CTF network. Do not expose these services to the public internet and do not run them
+  on machines you care about. Flags use the <code>CTF{...}</code> format.</p>
+ </div>
+</section>
+
+</div>
+
+<footer>
+ <div class="mono">KING OF THE HILL</div>
+ <div style="margin-top:8px">Open source on <a href="https://github.com/JJuly02/king-of-the-hill-ctf">GitHub</a>. Self-host it, break it, defend it.</div>
+</footer>
+
+</body>
+</html>

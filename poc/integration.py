@@ -82,7 +82,7 @@ def main():
 
     env = dict(os.environ, KOTH_CONFIG_DIR=cfg, KOTH_DB=os.path.join(work, "koth.db"),
                KOTH_FLAGS=os.path.join(ROOT, "flags", "flags.json"),
-               KOTH_BIND=f"0.0.0.0:{BIND_PORT}", KOTH_ADMIN_KEY=ADMIN_KEY)
+               KOTH_BIND=f"0.0.0.0:{BIND_PORT}", KOTH_ADMIN_KEY=ADMIN_KEY, KOTH_REQUIRE_LOGIN="0")
     sb = subprocess.Popen([sys.executable, os.path.join(ROOT, "scoreboard", "scoreboard.py")],
                           env=env, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     for _ in range(50):
@@ -93,19 +93,18 @@ def main():
             time.sleep(0.1)
     print(f"\n=== KOTH INTEGRATION TEST === scoreboard {BASE}\n")
 
+    agents = []
     try:
-        # install and run the agent IN EACH container (as on a real host)
-        print("[A] Installing the beacon agent inside the containers")
+        # run one beacon agent per hill ON THE HOST (HMAC key stays off the box);
+        # each agent reads the container's king.txt via docker exec
+        print("[A] Starting host-side beacon agents (key never enters the container)")
         for h in HILLS:
-            subprocess.run(["docker", "cp", os.path.join(ROOT, "agent", "agent.py"),
-                            f"{CONT[h]}:/opt/koth_agent.py"], capture_output=True)
-            dexec(CONT[h], "pkill", "-f", "koth_agent.py")  # in case one is left over from a previous run
-            dexec(CONT[h], "sh", "-c",
-                  f"KOTH_HILL_ID={h} KOTH_OPS_URL=http://host.docker.internal:{BIND_PORT} "
-                  f"KOTH_HMAC_KEY={KEYS[h]} KOTH_KING=/root/king.txt KOTH_TOKENS={ALL_TOKENS} "
-                  f"KOTH_INTERVAL=1 KOTH_REQUIRE_ROOT=1 KOTH_NONCE_FILE=/var/koth_nonce "
-                  f"nohup python3 /opt/koth_agent.py >/tmp/agent.log 2>&1 &",
-                  detach=True)
+            e = dict(os.environ, KOTH_HILL_ID=h, KOTH_OPS_URL=BASE, KOTH_HMAC_KEY=KEYS[h],
+                     KOTH_TOKENS=ALL_TOKENS, KOTH_INTERVAL="1",
+                     KOTH_READ_CMD=f"docker exec {CONT[h]} cat /root/king.txt",
+                     KOTH_NONCE_FILE=os.path.join(work, f"nonce-{h}"))
+            agents.append(subprocess.Popen([sys.executable, os.path.join(ROOT, "agent", "agent.py")],
+                                           env=e, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
         time.sleep(5)
         s = state()
         check("SLA: all 4 hills UP (not SLA_DOWN)",
@@ -157,8 +156,11 @@ def main():
 
         print(f"\n=== INTEGRATION RESULT: {PASS} PASS / {FAIL} FAIL ===\n")
     finally:
-        for h in HILLS:
-            dexec(CONT[h], "pkill", "-f", "koth_agent.py")
+        for p in agents:
+            try:
+                p.terminate()
+            except Exception:
+                pass
         sb.terminate()
         try:
             sb.wait(timeout=3)

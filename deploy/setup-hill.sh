@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# HILL VM: brings up the vulnerable hill (container) + beacon agent IN THE CONTAINER + reset timer (host).
-# This model is tested by poc/integration.py.
+# HILL VM: brings up the vulnerable hill (container) + beacon agent ON THE HOST + reset timer (host).
+# The agent runs on the host (not in the container) so the HMAC signing key never
+# enters the box that players get root on. This model is tested by poc/integration.py.
 # Usage: sudo bash deploy/setup-hill.sh <web-rce|drupal|redis|jenkins> <OPS_IP> <HILL_ID> <HMAC_KEY> [SLA_PORT]
 set -euo pipefail
-VULN="${1:?vuln: web-rce|drupal|redis|jenkins}"; OPS="${2:?OPS_IP}"; HID="${3:?HILL_ID np. hill-1}"
-KEY="${4:?HMAC_KEY z setup-ops}"; PORT="${5:-80}"
+VULN="${1:?vuln: web-rce|drupal|redis|jenkins}"; OPS="${2:?OPS_IP}"; HID="${3:?HILL_ID e.g. hill-1}"
+KEY="${4:?HMAC_KEY from setup-ops}"; PORT="${5:-80}"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 CONT="koth-$HID"
 TOKENS="$(python3 -c 'import json,sys;print(",".join(v["token"] for v in json.load(open(sys.argv[1])).values()))' "$REPO/config/teams.json")"
@@ -15,26 +16,34 @@ case "$VULN" in
 echo ">>> [1/4] vulnerable hill ($VULN) as container $CONT"
 (cd "$REPO/deploy/hills/$D" && docker compose up -d --build)
 
-echo ">>> [2/4] beacon agent inside the container"
-docker cp "$REPO/agent/agent.py" "$CONT:/opt/koth_agent.py"
+echo ">>> [2/4] beacon agent on the HOST (HMAC key stays off the box)"
 install -d /opt/koth
-cat > /opt/koth/launch-agent.sh <<LA
-#!/bin/sh
-docker exec "$CONT" sh -c 'pgrep -f koth_agent.py >/dev/null 2>&1 && exit 0; \
-  KOTH_HILL_ID=$HID KOTH_OPS_URL=http://$OPS:8000 KOTH_HMAC_KEY=$KEY \
-  KOTH_KING=/root/king.txt KOTH_TOKENS=$TOKENS KOTH_INTERVAL=1 KOTH_REQUIRE_ROOT=1 \
-  KOTH_NONCE_FILE=/var/koth_nonce nohup python3 /opt/koth_agent.py >/tmp/agent.log 2>&1 &'
-LA
-chmod +x /opt/koth/launch-agent.sh
-/opt/koth/launch-agent.sh
+cp "$REPO/agent/agent.py" /opt/koth/agent.py
+cat > /etc/systemd/system/koth-agent.service <<UNIT
+[Unit]
+Description=KOTH beacon agent ($HID)
+After=docker.service
+[Service]
+Environment=KOTH_HILL_ID=$HID KOTH_OPS_URL=http://$OPS:8000 KOTH_HMAC_KEY=$KEY KOTH_TOKENS=$TOKENS
+Environment=KOTH_READ_CMD=docker exec $CONT cat /root/king.txt
+Environment=KOTH_INTERVAL=1
+Environment=KOTH_NONCE_FILE=/var/lib/koth/nonce
+ExecStartPre=/bin/mkdir -p /var/lib/koth
+ExecStart=/usr/bin/python3 /opt/koth/agent.py
+Restart=always
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now koth-agent.service
 
-echo ">>> [3/4] reset timer every 15 min (revives the vuln + keeps the agent alive; does NOT touch king.txt)"
+echo ">>> [3/4] reset timer every 15 min (revives the vuln; does NOT touch king.txt)"
 cat > /etc/systemd/system/koth-reset.service <<UNIT
 [Unit]
 Description=KOTH reset ($HID)
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'docker exec $CONT /opt/app/reset.sh; /opt/koth/launch-agent.sh'
+ExecStart=/bin/sh -c 'docker exec $CONT /opt/app/reset.sh'
 UNIT
 cat > /etc/systemd/system/koth-reset.timer <<UNIT
 [Unit]
@@ -49,5 +58,6 @@ systemctl daemon-reload
 systemctl enable --now koth-reset.timer
 
 echo ">>> [4/4] done. Hill $HID ($VULN) -> scoreboard http://$OPS:8000"
+echo ">>> The beacon agent runs on the host (koth-agent.service); the HMAC key never enters the container."
 echo ">>> The SLA prober will probe this host on the service port (see compose: $D)."
 echo ">>> TIP: snapshot this VM now for fast recovery during the game."

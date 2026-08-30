@@ -133,7 +133,7 @@ def main():
                "sla_prober_interval_s": 2, "clock_skew_flag_ms": 2000, "max_king_bytes": 64,
                "flag_submit_ratelimit_per_min": 9999}, open(os.path.join(cfg, "scoring.json"), "w"))
     env = dict(os.environ, KOTH_CONFIG_DIR=cfg, KOTH_DB=os.path.join(work, "koth.db"),
-               KOTH_FLAGS=os.path.join(ROOT, "flags", "flags.json"), KOTH_BIND=f"0.0.0.0:{PORT}", KOTH_ADMIN_KEY=ADMIN)
+               KOTH_FLAGS=os.path.join(ROOT, "flags", "flags.json"), KOTH_BIND=f"0.0.0.0:{PORT}", KOTH_ADMIN_KEY=ADMIN, KOTH_REQUIRE_LOGIN="0")
     sb = subprocess.Popen([sys.executable, os.path.join(ROOT, "scoreboard", "scoreboard.py")],
                           env=env, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     for _ in range(50):
@@ -143,15 +143,17 @@ def main():
         except Exception:
             time.sleep(0.1)
 
-    # fresh start: clear king.txt + (re)start the agents in the containers
+    # fresh start: clear king.txt in each container, then start host-side agents
+    # (HMAC key stays on the host; each agent reads king.txt via docker exec)
+    agents = []
     for h in HP:
         dexec(CONT[h], "sh", "-c", ": > /root/king.txt; chmod 600 /root/king.txt")
-        subprocess.run(["docker", "cp", os.path.join(ROOT, "agent", "agent.py"), f"{CONT[h]}:/opt/koth_agent.py"], capture_output=True)
-        dexec(CONT[h], "pkill", "-f", "koth_agent.py")
-        subprocess.run(["docker", "exec", "-d", CONT[h], "sh", "-c",
-                        f"KOTH_HILL_ID={h} KOTH_OPS_URL=http://host.docker.internal:{PORT} KOTH_HMAC_KEY={KEYS[h]} "
-                        f"KOTH_KING=/root/king.txt KOTH_TOKENS={ALL} KOTH_INTERVAL=1 KOTH_REQUIRE_ROOT=1 "
-                        f"KOTH_NONCE_FILE=/var/koth_play nohup python3 /opt/koth_agent.py >/tmp/agent.log 2>&1 &"], capture_output=True)
+        e = dict(os.environ, KOTH_HILL_ID=h, KOTH_OPS_URL=BASE, KOTH_HMAC_KEY=KEYS[h],
+                 KOTH_TOKENS=ALL, KOTH_INTERVAL="1",
+                 KOTH_READ_CMD=f"docker exec {CONT[h]} cat /root/king.txt",
+                 KOTH_NONCE_FILE=os.path.join(work, f"nonce-{h}"))
+        agents.append(subprocess.Popen([sys.executable, os.path.join(ROOT, "agent", "agent.py")],
+                                       env=e, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
     time.sleep(3)
 
     print("\n" + "=" * 64 + "\n  KOTH - PLAYTEST (match on live containers)\n" + "=" * 64)
@@ -198,8 +200,11 @@ def main():
         print(f"   Played: {len(FLAGS)} flags in play, first bloods awarded, "
               f"SLA incident penalized, green-team reset worked.")
     finally:
-        for h in HP:
-            dexec(CONT[h], "pkill", "-f", "koth_agent.py")
+        for p in agents:
+            try:
+                p.terminate()
+            except Exception:
+                pass
         sb.terminate()
         try:
             sb.wait(timeout=3)

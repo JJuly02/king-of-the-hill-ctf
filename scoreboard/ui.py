@@ -161,7 +161,7 @@ team's king.txt takes the hill. The entry vulnerability and privilege escalation
 game ports; everything else is out of scope. On every host you access you must identify your team as instructed in <code>TEAM-DECLARATION.md</code> on that host - operating without declaring is an ROE violation. Flags are submitted on the scoring platform.</p>
 <div class=rulecols>
 <div class="rblock allow"><h4>In scope</h4><ul><li>The four hill services on their game ports</li><li>Other teams' foothold on those hills</li></ul></div>
-<div class="rblock illegal"><h4>Out of scope (do not touch)</h4><ul><li>Scoring / green-team server (scoreboard, port 8000)</li><li>Scoring agent (koth_agent.py) and reset service on the hills</li><li>Organizers' Jenkins / CI and management (SSH, port 22)</li><li>Other teams' own infrastructure and VPN</li></ul></div>
+<div class="rblock illegal"><h4>Out of scope (do not touch)</h4><ul><li>Scoring / green-team server (scoreboard, port 8000)</li><li>Scoring agent (host-side) and the reset service</li><li>Organizers' Jenkins / CI and management (SSH, port 22)</li><li>Other teams' own infrastructure and VPN</li></ul></div>
 <div class="rblock legal"><h4>Penalties</h4><p>Every illegal or out-of-scope action costs your team points, up to 100 per action. Killing the scoring agent also triggers a forced revert.</p></div>
 </div>
 <div class=rulecols style="margin-top:14px">

@@ -21,9 +21,9 @@ machines you care about.
 - `scoreboard/` - collector for beacon reports, tick engine, flag service (with
   first blood), SLA prober, live dashboard, team portal, green-team admin panel,
   append-only audit log. SQLite + `http.server` + HMAC.
-- `agent/` - the beacon agent that runs as root on a hill: it reads
-  `/root/king.txt`, validates it, signs a report (HMAC), and sends it to the
-  collector.
+- `agent/` - the beacon agent: it reads a hill's `/root/king.txt` from the host
+  (so the signing key never enters the box players get root on), validates it,
+  signs a report (HMAC), and sends it to the collector.
 - `poc/` - local harnesses that stand up the scoreboard plus simulated hills and
   automatically exercise the whole scoring flow: taking a hill, first blood, SLA
   penalty, agent silence, and rejection of replay / symlink / bad-token reports.
@@ -95,10 +95,25 @@ revives the entry vuln and restores the privesc path.
 
 See [DEPLOY.md](DEPLOY.md).
 
+## Security model
+
+Everything here is intentionally vulnerable, but the *scoring* is designed to resist
+cheating:
+
+- Players get root **inside a hill's container**, never on the host. The beacon agent
+  and its per-hill HMAC key run on the **host** and read the container's `king.txt`
+  from outside, so a team that roots a hill cannot read the key or forge ownership
+  reports to the scoreboard.
+- The scoreboard rejects unsigned or replayed ownership reports. Rotate a hill's key
+  from the green-team panel if you suspect a leak.
+- Set a strong `KOTH_ADMIN_KEY` and `KOTH_TEAM_PASS`, keep team tokens and access
+  codes per-team, and replace the demo `hmac_key` values in `config/hills.json`
+  (setup-ops.sh does this for you).
+
 ## Configuration
 
 - `config/teams.json` - teams, each with a beacon `token` and a portal `code`.
-- `config/hills.json` - hill id, SLA probe host/port, per-hill HMAC key, dashboard URL.
+- `config/hills.json` - hill id, SLA probe host/port, per-hill HMAC key, dashboard URL. The committed `hmac_key` values are demo placeholders; `deploy/setup-ops.sh` generates random keys for a real deployment.
 - `config/scoring.json` - tick value, flag points, first-blood bonus, SLA penalty, timers.
 - `flags/flags.json` - the flags (`CTF{...}`), one user and one root per hill.
 

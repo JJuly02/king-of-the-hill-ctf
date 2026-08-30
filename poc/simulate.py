@@ -116,7 +116,7 @@ def main():
         d.start()
     env = dict(os.environ, KOTH_CONFIG_DIR=cfg, KOTH_DB=os.path.join(work, "koth.db"),
                KOTH_FLAGS=os.path.join(ROOT, "flags", "flags.json"),
-               KOTH_BIND=f"{BIND_HOST}:{BIND_PORT}", KOTH_ADMIN_KEY=ADMIN_KEY)
+               KOTH_BIND=f"{BIND_HOST}:{BIND_PORT}", KOTH_ADMIN_KEY=ADMIN_KEY, KOTH_REQUIRE_LOGIN="0")
     sb = subprocess.Popen([sys.executable, os.path.join(ROOT, "scoreboard", "scoreboard.py")],
                           env=env, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     for _ in range(50):

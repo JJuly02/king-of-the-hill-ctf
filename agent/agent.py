@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
-"""KOTH beacon agent - runs as root on a hill, on a systemd timer every 1s.
-Reads /root/king.txt safely, validates, signs, and reports to the collector.
+"""KOTH beacon agent - reports which team holds a hill, on a timer every 1s.
+Reads the hill's king.txt, validates it, signs the report, and sends it to the
+collector.
+
+Two read modes:
+  - Local file (default): opens KOTH_KING directly with O_NOFOLLOW. Use when the
+    agent runs on the same machine/box as king.txt (e.g. the local PoC).
+  - Command (KOTH_READ_CMD): runs a command to fetch king.txt from inside the hill
+    (e.g. "docker exec <cont> cat /root/king.txt"). Use this to run the agent ON
+    THE HOST, so KOTH_HMAC_KEY never enters the container that players get root on.
 
 Configuration via env:
   KOTH_HILL_ID     e.g. hill-1
   KOTH_OPS_URL     e.g. http://10.0.0.5:8000
   KOTH_HMAC_KEY    per-hill key (rotated on reset)   [harden: Ed25519 private key]
-  KOTH_KING        default /root/king.txt
+  KOTH_KING        default /root/king.txt (local file mode)
+  KOTH_READ_CMD    if set, fetch the king token by running this command instead of
+                   opening KOTH_KING locally (host-side agent; keeps the key off the box)
   KOTH_TOKENS      comma-separated list of known team tokens (exact match)
   KOTH_INTERVAL    default 1 (s)
   KOTH_NONCE_FILE  default <king_dir>/.agent_nonce
   KOTH_MAX_BYTES   default 64
-  KOTH_REQUIRE_ROOT  "1" requires root:root mode 600 (recommended); default 0
+  KOTH_REQUIRE_ROOT  "1" requires root:root mode 600 (local file mode); default 0
   KOTH_ONCE        "1" -> one iteration and exit (for a timer / systemd oneshot)
 
 The signature (HMAC-SHA256) MUST match scoreboard/signing.py.
@@ -21,6 +31,7 @@ import hashlib
 import json
 import os
 import stat
+import subprocess
 import sys
 import time
 import urllib.request
@@ -29,6 +40,7 @@ HILL_ID = os.environ.get("KOTH_HILL_ID", "hill-1")
 OPS_URL = os.environ.get("KOTH_OPS_URL", "http://127.0.0.1:8000").rstrip("/")
 HMAC_KEY = os.environ.get("KOTH_HMAC_KEY", "changeme")
 KING = os.environ.get("KOTH_KING", "/root/king.txt")
+READ_CMD = os.environ.get("KOTH_READ_CMD", "")
 TOKENS = set(t for t in os.environ.get("KOTH_TOKENS", "").split(",") if t)
 INTERVAL = float(os.environ.get("KOTH_INTERVAL", "1"))
 NONCE_FILE = os.environ.get("KOTH_NONCE_FILE", os.path.join(os.path.dirname(KING) or ".", ".agent_nonce"))
@@ -60,8 +72,33 @@ def next_nonce():
     return n
 
 
+def _match(data):
+    if data in TOKENS:
+        return data, "ok"
+    return None, ("empty" if not data else "unknown_token")
+
+
+def read_king_cmd():
+    """Read the king token by running KOTH_READ_CMD on the host (host-side agent).
+    The command fetches king.txt from inside the hill (e.g. via docker exec), so
+    KOTH_HMAC_KEY never enters the box that players get root on. Content is still
+    validated by exact token match, which is the anti-impersonation control."""
+    try:
+        out = subprocess.run(READ_CMD, shell=True, capture_output=True, timeout=5)
+    except Exception as e:
+        return None, f"read_cmd_fail:{e}"
+    if out.returncode != 0:
+        return None, f"read_cmd_rc:{out.returncode}"
+    raw = out.stdout
+    if len(raw) > MAX_BYTES + 1:
+        return None, "too_big"
+    return _match(raw.decode("utf-8", "replace").strip())
+
+
 def read_king():
     """Returns (token_or_None, reason). O_NOFOLLOW -> resistant to symlink swap."""
+    if READ_CMD:
+        return read_king_cmd()
     try:
         fd = os.open(KING, os.O_RDONLY | os.O_NOFOLLOW)
     except OSError as e:
@@ -77,9 +114,7 @@ def read_king():
         data = os.read(fd, MAX_BYTES + 1).decode("utf-8", "replace").strip()
     finally:
         os.close(fd)
-    if data in TOKENS:
-        return data, "ok"
-    return None, ("empty" if not data else "unknown_token")
+    return _match(data)
 
 
 def send(token, reason):

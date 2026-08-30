@@ -61,9 +61,10 @@ sudo bash deploy/setup-hill.sh web-rce  <OPS_IP> hill-1 <HILL-1_KEY> 8081
 (The first argument is the hill type; the `drupal` / `redis` / `jenkins` labels are
 just the directory names for hill-2 / hill-3 / hill-4.)
 
-The script does `docker compose up` for the hill, launches the in-container beacon
-agent, and installs a `systemd` timer that resets every 15 minutes (revives the
-vuln, keeps the agent alive, and **does not touch `king.txt`**).
+The script does `docker compose up` for the hill, starts a **host-side** beacon
+agent (`koth-agent.service`) that reads the container's `king.txt` via `docker exec`
+so the HMAC key never enters the box, and installs a `systemd` timer that resets
+every 15 minutes (revives the vuln, **does not touch `king.txt`**).
 
 ## 3. Network
 
@@ -108,14 +109,15 @@ infrastructure (ops:8000) and management (SSH) off-limits to players.
    image, which drops every attacker change and clears `king.txt`:
    ```bash
    cd deploy/hills/hill-1-web-rce && docker compose up -d --force-recreate
-   /opt/koth/launch-agent.sh   # re-attach the beacon agent
    ```
+   The host-side agent reconnects on its own once the container is back.
 
 Note: teams get root **inside the container**, not on the host (no docker socket,
 no `NET_ADMIN`). They cannot firewall the port; the realistic denial vector is
 killing the service, which the 15-minute reset restarts and which costs the last
 owner an SLA penalty when the prober sees it go DOWN. The host stays under green-team
-control over SSH.
+control over SSH. The beacon agent and its signing key also run on the host, so
+rooting a hill does not expose the key or let a team forge ownership reports.
 
 ## 7. Verify before start
 

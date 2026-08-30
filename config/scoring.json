@@ -1,0 +1,16 @@
+{
+  "tick": 3,
+  "user_flag": 50,
+  "root_flag": 100,
+  "first_blood_bonus": 50,
+  "sla_penalty": 30,
+  "hold_threshold_ticks": 600,
+  "agent_beacon_interval_s": 1,
+  "silence_warn_s": 4,
+  "silence_crit_s": 12,
+  "sla_prober_interval_s": 2,
+  "clock_skew_flag_ms": 2000,
+  "max_king_bytes": 64,
+  "flag_submit_ratelimit_per_min": 30,
+  "tick_award_interval_s": 7
+}

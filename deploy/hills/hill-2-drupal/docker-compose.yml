@@ -1,0 +1,6 @@
+# Local demo of hill-2 (web eval RCE -> SUID privesc). On a real VM the service runs on the host.
+services:
+  hill-2:
+    build: .
+    container_name: koth-hill-2
+    ports: ["8082:80"]

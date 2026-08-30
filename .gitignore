@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+koth.db
+*.nonce

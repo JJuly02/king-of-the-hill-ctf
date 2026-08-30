@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="King of the Hill">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7ff4ff"/>
+      <stop offset="1" stop-color="#00b8d4"/>
+    </linearGradient>
+  </defs>
+  <path d="M18 82 L13 39 L39 60 L60 25 L81 60 L107 39 L102 82 Z"
+        fill="url(#g)" stroke="#00e5ff" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="18" y="85" width="84" height="15" rx="3" fill="url(#g)" stroke="#00e5ff" stroke-width="3"/>
+  <circle cx="13" cy="39" r="6" fill="#bff8ff"/>
+  <circle cx="60" cy="24" r="7" fill="#bff8ff"/>
+  <circle cx="107" cy="39" r="6" fill="#bff8ff"/>
+</svg>

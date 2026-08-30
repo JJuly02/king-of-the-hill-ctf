@@ -1,0 +1,8 @@
+# Local demo/test of the web-rce hill (self-contained vulnerable box).
+# On a real VM the service runs on the host, not in a container.
+services:
+  hill-1:
+    build: .
+    container_name: koth-hill-1
+    ports:
+      - "8081:80"

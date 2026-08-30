@@ -1,0 +1,6 @@
+# Local demo of hill-3 (admin login RCE -> writable cron/hook privesc). On a real VM the service runs on the host.
+services:
+  hill-3:
+    build: .
+    container_name: koth-hill-3
+    ports: ["8083:80"]

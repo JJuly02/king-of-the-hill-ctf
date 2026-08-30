@@ -1,0 +1,6 @@
+# Local demo of hill-4 (weak creds -> eval RCE -> sudo tar privesc). On a real VM the service runs on the host.
+services:
+  hill-4:
+    build: .
+    container_name: koth-hill-4
+    ports: ["8084:80"]

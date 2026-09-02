@@ -2,5 +2,6 @@
   {"id":"hill-1","name":"NetOps Console","service_host":"127.0.0.1","service_port":8081,"hmac_key":"changeme-hill-1","url":"http://localhost:8081"},
   {"id":"hill-2","name":"MathLab Compute","service_host":"127.0.0.1","service_port":8082,"hmac_key":"changeme-hill-2","url":"http://localhost:8082"},
   {"id":"hill-3","name":"CacheCTL Admin","service_host":"127.0.0.1","service_port":8083,"hmac_key":"changeme-hill-3","url":"http://localhost:8083"},
-  {"id":"hill-4","name":"BuildHub CI","service_host":"127.0.0.1","service_port":8084,"hmac_key":"changeme-hill-4","url":"http://localhost:8084"}
+  {"id":"hill-4","name":"BuildHub CI","service_host":"127.0.0.1","service_port":8084,"hmac_key":"changeme-hill-4","url":"http://localhost:8084"},
+  {"id":"hill-5","name":"HackWars Arena","service_host":"127.0.0.1","service_port":8085,"hmac_key":"changeme-hill-5","url":"http://localhost:8085"}
 ]

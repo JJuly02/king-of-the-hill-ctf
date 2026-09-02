@@ -46,5 +46,17 @@
     "hill_id": "hill-4",
     "kind": "root",
     "flag": "CTF{h0st_pr1v3sc_sud0_r00t_w1n}"
+  },
+  {
+    "flag_id": "hill-5-user",
+    "hill_id": "hill-5",
+    "kind": "user",
+    "flag": "CTF{h4ckw4rs_c0mm4nd_1nj3ct10n_f00th0ld}"
+  },
+  {
+    "flag_id": "hill-5-root",
+    "hill_id": "hill-5",
+    "kind": "root",
+    "flag": "CTF{h4ckw4rs_sud0_awk_gtf0b1ns_r00t}"
   }
 ]

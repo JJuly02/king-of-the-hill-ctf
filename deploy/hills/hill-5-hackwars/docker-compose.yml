@@ -1,0 +1,8 @@
+# LOKALNE demo/test hilla HackWars (self-contained podatny box).
+# Na docelowej VM (Wariant A) usluga dziala na hoscie, nie w kontenerze.
+services:
+  hill-5:
+    build: .
+    container_name: koth-hill-5
+    ports:
+      - "8085:80"

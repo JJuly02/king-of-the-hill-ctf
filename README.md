@@ -34,9 +34,9 @@ machines you care about.
   vulnerable box, an in-container beacon agent, and a `reset.sh`).
 - `deploy/setup-ops.sh` / `deploy/setup-hill.sh` - deploy the scoreboard and the
   hills onto real VMs over SSH.
-- `flags/flags.json` - the eight flags (`user.txt` + `root.txt` on four hills).
+- `flags/flags.json` - the flags (`user.txt` + `root.txt` on each hill).
 
-## The four hills
+## The hills
 
 | Hill | Theme | Entry | Privesc |
 | --- | --- | --- | --- |
@@ -44,6 +44,15 @@ machines you care about.
 | hill-2 | MathLab Compute | unsandboxed `eval()` | SUID bash |
 | hill-3 | CacheCTL Admin | admin-login brute force → console RCE | world-writable root cron/hook |
 | hill-4 | BuildHub CI | hidden console, weak creds | `sudo tar` (GTFOBins) |
+| hill-5 | Doors of Durin (LOTR) | repair boot → command injection | `sudo find` (GTFOBins) |
+| hill-6 | Palantir of Orthanc (LOTR) | XXE file read → command console | `sudo awk` (GTFOBins) |
+| hill-7 | Barad-dur Watchtower (LOTR) | JWT `alg:none` bypass → RCE | root-cron `PATH` hijack |
+| hill-8 | Isengard Forge (LOTR) | weak-cred CI console → build RCE | capability `cap_setuid` |
+| hill-9 | Grid Portal / I/O Tower (Tron) | server-side template injection | `sudo sed` (GTFOBins) |
+
+Hills 5-9 are new and ship as an **alpha**: each is validated end to end by the smoke
+test, but they have not yet been battle-tested in a live event. The
+[design roadmap](docs/CHALLENGE-ROADMAP.md) sketches challenges 10-20.
 
 Each hill's `README.md` describes it in detail. Full walkthroughs are in
 [SOLUTIONS.md](SOLUTIONS.md).
@@ -54,13 +63,13 @@ project onto KOTH, and how the integration with the RedutaCTF platform works, is
 
 ## Quick start (local, one host with Docker)
 
-Bring up the four hills:
+Bring up the hills:
 
 ```bash
 for d in deploy/hills/*/; do (cd "$d" && docker compose up -d --build); done
 ```
 
-Run the scoreboard against the sample config (hills reachable on 8081-8084):
+Run the scoreboard against the sample config (hills reachable on 8081-8089):
 
 ```bash
 cd scoreboard
@@ -86,10 +95,11 @@ Want a fully scripted demo without deploying anything? See `poc/` - for example
 
 ## Verify the challenges
 
-With the four hills running locally:
+With the hills running locally:
 
 ```bash
-bash deploy/smoke-test.sh
+bash deploy/smoke-test.sh              # all hills that are up
+HILLS="5 6 7 8 9" bash deploy/smoke-test.sh   # or just a subset
 ```
 
 This walks every hill from entry to root to `king.txt`, and checks that a reset

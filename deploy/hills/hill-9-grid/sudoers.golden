@@ -1,0 +1,1 @@
+program ALL=(root) NOPASSWD: /usr/bin/sed

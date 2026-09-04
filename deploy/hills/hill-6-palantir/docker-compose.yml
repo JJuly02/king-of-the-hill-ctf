@@ -1,0 +1,6 @@
+# Local demo of hill-6 (XXE -> attunement key -> command console -> sudo awk privesc).
+services:
+  hill-6:
+    build: .
+    container_name: koth-hill-6
+    ports: ["8086:80"]

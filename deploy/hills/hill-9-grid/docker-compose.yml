@@ -1,0 +1,6 @@
+# Local demo of hill-9 (SSTI -> RCE -> sudo sed privesc).
+services:
+  hill-9:
+    build: .
+    container_name: koth-hill-9
+    ports: ["8089:80"]

@@ -1,0 +1,6 @@
+# Local demo of hill-7 (JWT alg:none bypass -> admin RCE -> PATH-hijack privesc).
+services:
+  hill-7:
+    build: .
+    container_name: koth-hill-7
+    ports: ["8087:80"]

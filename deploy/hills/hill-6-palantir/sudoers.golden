@@ -1,0 +1,1 @@
+palantir ALL=(root) NOPASSWD: /usr/bin/awk

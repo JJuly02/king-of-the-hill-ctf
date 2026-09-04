@@ -2,5 +2,10 @@
   {"id":"hill-1","name":"NetOps Console","service_host":"127.0.0.1","service_port":8081,"hmac_key":"changeme-hill-1","url":"http://localhost:8081"},
   {"id":"hill-2","name":"MathLab Compute","service_host":"127.0.0.1","service_port":8082,"hmac_key":"changeme-hill-2","url":"http://localhost:8082"},
   {"id":"hill-3","name":"CacheCTL Admin","service_host":"127.0.0.1","service_port":8083,"hmac_key":"changeme-hill-3","url":"http://localhost:8083"},
-  {"id":"hill-4","name":"BuildHub CI","service_host":"127.0.0.1","service_port":8084,"hmac_key":"changeme-hill-4","url":"http://localhost:8084"}
+  {"id":"hill-4","name":"BuildHub CI","service_host":"127.0.0.1","service_port":8084,"hmac_key":"changeme-hill-4","url":"http://localhost:8084"},
+  {"id":"hill-5","name":"Doors of Durin","service_host":"127.0.0.1","service_port":8085,"hmac_key":"changeme-hill-5","url":"http://localhost:8085"},
+  {"id":"hill-6","name":"Palantir of Orthanc","service_host":"127.0.0.1","service_port":8086,"hmac_key":"changeme-hill-6","url":"http://localhost:8086"},
+  {"id":"hill-7","name":"Barad-dur Watchtower","service_host":"127.0.0.1","service_port":8087,"hmac_key":"changeme-hill-7","url":"http://localhost:8087"},
+  {"id":"hill-8","name":"Isengard Forge","service_host":"127.0.0.1","service_port":8088,"hmac_key":"changeme-hill-8","url":"http://localhost:8088"},
+  {"id":"hill-9","name":"Grid Portal","service_host":"127.0.0.1","service_port":8089,"hmac_key":"changeme-hill-9","url":"http://localhost:8089"}
 ]

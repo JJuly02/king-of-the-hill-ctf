@@ -104,7 +104,7 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
  <div class="badges">
   <span class="badge">Pure Python stdlib</span>
   <span class="badge">Zero dependencies</span>
-  <span class="badge">4 hills + scoreboard</span>
+  <span class="badge">9 hills + scoreboard</span>
   <span class="badge">Docker</span>
  </div>
 </header>
@@ -126,9 +126,11 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
 </section>
 
 <section id="hills">
- <h2>The four hills</h2>
+ <h2>The nine hills</h2>
  <p class="sub">Each hill is a self-contained vulnerable box: a foothold vulnerability, then a
- local privilege escalation to root. Every one is verified end to end by the smoke test.</p>
+ local privilege escalation to root. Every one is verified end to end by the smoke test.
+ Hills 5-9 (LOTR and Tron themed) are new and ship as an <strong>alpha</strong>: validated by
+ the smoke test, but not yet battle-tested in a live event.</p>
  <div class="grid g2">
   <div class="card">
    <div class="k">Hill 1 // NetOps Console</div>
@@ -154,12 +156,44 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
    <p>A CI script console is unlinked from the UI and behind weak HTTP auth. Find it, authenticate, run code.</p>
    <div class="meta"><span class="pill a">foothold: weak creds</span><span class="pill">privesc: sudo tar</span></div>
   </div>
+  <div class="card">
+   <div class="k">Hill 5 // Doors of Durin <span class="pill">alpha</span></div>
+   <h3>Repair-gated command injection</h3>
+   <p>LOTR / Moria. The box boots in rescue mode; repair the bootloader record through the rescue console to bring the service online, then the delving console reaches a shell.</p>
+   <div class="meta"><span class="pill a">foothold: repair + cmd injection</span><span class="pill">privesc: sudo find</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 6 // Palantir of Orthanc <span class="pill">alpha</span></div>
+   <h3>XXE file read</h3>
+   <p>LOTR. An XML vision parser resolves external entities. Read arbitrary files, leak the attunement key, and unlock the command console.</p>
+   <div class="meta"><span class="pill a">foothold: XXE</span><span class="pill">privesc: sudo awk</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 7 // Barad-dur Watchtower <span class="pill">alpha</span></div>
+   <h3>JWT alg:none bypass</h3>
+   <p>LOTR / Mordor. The verifier trusts the token's alg field. Forge an unsigned admin token for command execution, then hijack a writable PATH dir run by a root cron.</p>
+   <div class="meta"><span class="pill a">foothold: JWT bypass</span><span class="pill">privesc: PATH hijack</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 8 // Isengard Forge <span class="pill">alpha</span></div>
+   <h3>Weak CI credentials</h3>
+   <p>LOTR. A build console runs submitted scripts behind guessable foreman creds. A python copy on the box carries the cap_setuid capability.</p>
+   <div class="meta"><span class="pill a">foothold: weak creds RCE</span><span class="pill">privesc: cap_setuid</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 9 // Grid Portal (I/O Tower) <span class="pill">alpha</span></div>
+   <h3>Server-side template injection</h3>
+   <p>Tron. The program portal renders your name through a naive template engine that evaluates the expression between double braces.</p>
+   <div class="meta"><span class="pill a">foothold: SSTI</span><span class="pill">privesc: sudo sed</span></div>
+  </div>
  </div>
+ <p class="sub">See the <a href="CHALLENGE-ROADMAP.md">20-challenge design roadmap</a> for what is planned next
+ (Tron, Avatar, and Harry Potter sets) and the repair-to-capture pattern.</p>
 </section>
 
 <section id="quickstart">
  <h2>Quick start</h2>
- <p class="sub">One host with Docker. Bring up the four hills, then run the scoreboard against the sample config.</p>
+ <p class="sub">One host with Docker. Bring up the hills, then run the scoreboard against the sample config.</p>
 <pre><span class="c"># bring up the four vulnerable hills</span>
 for d in deploy/hills/*/; do (cd "$d" &amp;&amp; docker compose up -d --build); done
 

@@ -1,0 +1,8 @@
+# Local demo of hill-5 (repair-gated boot -> command injection -> sudo find privesc).
+# On a real VM the service runs on the host, and the "repair" becomes a genuine
+# low-level fix (broken grub.cfg / fstab in emergency mode) - see README.md.
+services:
+  hill-5:
+    build: .
+    container_name: koth-hill-5
+    ports: ["8085:80"]

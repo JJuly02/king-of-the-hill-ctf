@@ -1,0 +1,6 @@
+# Local demo of hill-8 (weak-cred CI console -> build RCE -> cap_setuid privesc).
+services:
+  hill-8:
+    build: .
+    container_name: koth-hill-8
+    ports: ["8088:80"]

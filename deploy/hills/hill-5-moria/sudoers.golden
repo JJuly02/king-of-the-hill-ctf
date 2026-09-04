@@ -1,0 +1,1 @@
+moria ALL=(root) NOPASSWD: /usr/bin/find

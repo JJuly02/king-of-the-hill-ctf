@@ -1,0 +1,6 @@
+# Local demo of hill-10 (pickle deserialization RCE -> SUID find privesc).
+services:
+  hill-10:
+    build: .
+    container_name: koth-hill-10
+    ports: ["8090:80"]

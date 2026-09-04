@@ -49,10 +49,15 @@ machines you care about.
 | hill-7 | Barad-dur Watchtower (LOTR) | JWT `alg:none` bypass → RCE | root-cron `PATH` hijack |
 | hill-8 | Isengard Forge (LOTR) | weak-cred CI console → build RCE | capability `cap_setuid` |
 | hill-9 | Grid Portal / I/O Tower (Tron) | server-side template injection | `sudo sed` (GTFOBins) |
+| hill-10 | MCP Core (Tron) | pickle deserialization RCE | SUID `find` (GTFOBins) |
+| hill-14 | Avatar Link Unit (Avatar) | SQLi auth bypass → console RCE | `sudo perl` (GTFOBins) |
+| hill-17 | Hogwarts Portal (Harry Potter) | SSTI (spell portal) → RCE | `sudo python3` (GTFOBins) |
+| hill-19 | Ministry of Magic (Harry Potter) | SSRF + LFI → token → RCE | world-writable root cron |
 
-Hills 5-9 are new and ship as an **alpha**: each is validated end to end by the smoke
-test, but they have not yet been battle-tested in a live event. The
-[design roadmap](docs/CHALLENGE-ROADMAP.md) sketches challenges 10-20.
+Hills 5-9 and 10/14/17/19 are new and ship as an **alpha**: each is validated end to end
+by the smoke test, but they have not yet been battle-tested in a live event. The
+[design roadmap](docs/CHALLENGE-ROADMAP.md) sketches the rest of challenges 10-20; hill ports
+are `8080 + N` (so the built hills listen on 8081-8090, 8094, 8097, 8099).
 
 Each hill's `README.md` describes it in detail. Full walkthroughs are in
 [SOLUTIONS.md](SOLUTIONS.md).

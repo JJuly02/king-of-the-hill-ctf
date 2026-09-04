@@ -106,5 +106,53 @@
     "hill_id": "hill-9",
     "kind": "root",
     "flag": "CTF{sud0_s3d_gtf0b1ns_d3_r3z}"
+  },
+  {
+    "flag_id": "hill-10-user",
+    "hill_id": "hill-10",
+    "kind": "user",
+    "flag": "CTF{p1ckl3_r3duc3_0n_th3_gr1d}"
+  },
+  {
+    "flag_id": "hill-10-root",
+    "hill_id": "hill-10",
+    "kind": "root",
+    "flag": "CTF{su1d_f1nd_d3r3z_t0_r00t}"
+  },
+  {
+    "flag_id": "hill-14-user",
+    "hill_id": "hill-14",
+    "kind": "user",
+    "flag": "CTF{sql1_0r_1_3q_1_p4nd0r4}"
+  },
+  {
+    "flag_id": "hill-14-root",
+    "hill_id": "hill-14",
+    "kind": "root",
+    "flag": "CTF{sud0_p3rl_syst3m_2_r00t}"
+  },
+  {
+    "flag_id": "hill-17-user",
+    "hill_id": "hill-17",
+    "kind": "user",
+    "flag": "CTF{sst1_sp3ll_h0gw4rts_rc3}"
+  },
+  {
+    "flag_id": "hill-17-root",
+    "hill_id": "hill-17",
+    "kind": "root",
+    "flag": "CTF{sud0_pyth0n_expell14rmus}"
+  },
+  {
+    "flag_id": "hill-19-user",
+    "hill_id": "hill-19",
+    "kind": "user",
+    "flag": "CTF{ssrf_lf1_0wl_p0st_l34k}"
+  },
+  {
+    "flag_id": "hill-19-root",
+    "hill_id": "hill-19",
+    "kind": "root",
+    "flag": "CTF{r00t_cr0n_wr1t4bl3_m1n1stry}"
   }
 ]

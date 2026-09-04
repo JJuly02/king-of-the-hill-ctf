@@ -1,0 +1,6 @@
+# Local demo of hill-19 (SSRF + LFI relay -> token leak -> RCE -> root-cron privesc).
+services:
+  hill-19:
+    build: .
+    container_name: koth-hill-19
+    ports: ["8099:80"]

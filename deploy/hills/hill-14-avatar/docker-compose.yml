@@ -1,0 +1,6 @@
+# Local demo of hill-14 (SQLi auth bypass -> operator console RCE -> sudo perl privesc).
+services:
+  hill-14:
+    build: .
+    container_name: koth-hill-14
+    ports: ["8094:80"]

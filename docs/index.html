@@ -104,7 +104,7 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
  <div class="badges">
   <span class="badge">Pure Python stdlib</span>
   <span class="badge">Zero dependencies</span>
-  <span class="badge">9 hills + scoreboard</span>
+  <span class="badge">13 hills + scoreboard</span>
   <span class="badge">Docker</span>
  </div>
 </header>
@@ -126,11 +126,11 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
 </section>
 
 <section id="hills">
- <h2>The nine hills</h2>
+ <h2>The thirteen hills</h2>
  <p class="sub">Each hill is a self-contained vulnerable box: a foothold vulnerability, then a
  local privilege escalation to root. Every one is verified end to end by the smoke test.
- Hills 5-9 (LOTR and Tron themed) are new and ship as an <strong>alpha</strong>: validated by
- the smoke test, but not yet battle-tested in a live event.</p>
+ Hills 5-9 and 10/14/17/19 (LOTR, Tron, Avatar, and Harry Potter themed) are new and ship as an
+ <strong>alpha</strong>: validated by the smoke test, but not yet battle-tested in a live event.</p>
  <div class="grid g2">
   <div class="card">
    <div class="k">Hill 1 // NetOps Console</div>
@@ -185,6 +185,30 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
    <h3>Server-side template injection</h3>
    <p>Tron. The program portal renders your name through a naive template engine that evaluates the expression between double braces.</p>
    <div class="meta"><span class="pill a">foothold: SSTI</span><span class="pill">privesc: sudo sed</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 10 // MCP Core <span class="pill">alpha</span></div>
+   <h3>Pickle deserialization</h3>
+   <p>Tron. The Master Control Program restores a serialized session object with pickle, so a crafted object is remote code execution.</p>
+   <div class="meta"><span class="pill a">foothold: insecure deserialization</span><span class="pill">privesc: SUID find</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 14 // Avatar Link Unit <span class="pill">alpha</span></div>
+   <h3>SQL injection auth bypass</h3>
+   <p>Avatar. The biometric link login builds its SQL by string formatting; inject to bypass auth and reach the operator console.</p>
+   <div class="meta"><span class="pill a">foothold: SQLi</span><span class="pill">privesc: sudo perl</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 17 // Hogwarts Portal <span class="pill">alpha</span></div>
+   <h3>Template injection (spells)</h3>
+   <p>Harry Potter. The house-points portal evaluates the expression between double braces. A different engine and escalation than hill 9.</p>
+   <div class="meta"><span class="pill a">foothold: SSTI</span><span class="pill">privesc: sudo python3</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 19 // Ministry of Magic <span class="pill">alpha</span></div>
+   <h3>SSRF and LFI relay</h3>
+   <p>Harry Potter. The Owl Post relay fetches any URL and honours file scheme; leak the internal token, then drive the dispatch console.</p>
+   <div class="meta"><span class="pill a">foothold: SSRF + LFI</span><span class="pill">privesc: root cron</span></div>
   </div>
  </div>
  <p class="sub">See the <a href="CHALLENGE-ROADMAP.md">20-challenge design roadmap</a> for what is planned next

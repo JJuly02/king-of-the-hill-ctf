@@ -1,0 +1,6 @@
+# Local demo of hill-17 (SSTI spell portal -> RCE -> sudo python3 privesc).
+services:
+  hill-17:
+    build: .
+    container_name: koth-hill-17
+    ports: ["8097:80"]

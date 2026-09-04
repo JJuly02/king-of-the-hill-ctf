@@ -1,0 +1,1 @@
+navi ALL=(root) NOPASSWD: /usr/bin/perl

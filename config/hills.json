@@ -11,5 +11,9 @@
   {"id":"hill-10","name":"MCP Core","service_host":"127.0.0.1","service_port":8090,"hmac_key":"changeme-hill-10","url":"http://localhost:8090"},
   {"id":"hill-14","name":"Avatar Link Unit","service_host":"127.0.0.1","service_port":8094,"hmac_key":"changeme-hill-14","url":"http://localhost:8094"},
   {"id":"hill-17","name":"Hogwarts Portal","service_host":"127.0.0.1","service_port":8097,"hmac_key":"changeme-hill-17","url":"http://localhost:8097"},
-  {"id":"hill-19","name":"Ministry of Magic","service_host":"127.0.0.1","service_port":8099,"hmac_key":"changeme-hill-19","url":"http://localhost:8099"}
+  {"id":"hill-19","name":"Ministry of Magic","service_host":"127.0.0.1","service_port":8099,"hmac_key":"changeme-hill-19","url":"http://localhost:8099"},
+  {"id":"hill-11","name":"Light Cycle Arena","service_host":"127.0.0.1","service_port":8091,"hmac_key":"changeme-hill-11","url":"http://localhost:8091"},
+  {"id":"hill-13","name":"RDA Ops Console","service_host":"127.0.0.1","service_port":8093,"hmac_key":"changeme-hill-13","url":"http://localhost:8093"},
+  {"id":"hill-16","name":"Unobtainium Refinery","service_host":"127.0.0.1","service_port":8096,"hmac_key":"changeme-hill-16","url":"http://localhost:8096"},
+  {"id":"hill-18","name":"Gringotts Vault","service_host":"127.0.0.1","service_port":8098,"hmac_key":"changeme-hill-18","url":"http://localhost:8098"}
 ]

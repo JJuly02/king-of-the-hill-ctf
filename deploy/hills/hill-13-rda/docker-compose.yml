@@ -1,0 +1,6 @@
+# Local demo of hill-13 (command injection -> sudo dd read/write privesc).
+services:
+  hill-13:
+    build: .
+    container_name: koth-hill-13
+    ports: ["8093:80"]

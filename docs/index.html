@@ -104,7 +104,7 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
  <div class="badges">
   <span class="badge">Pure Python stdlib</span>
   <span class="badge">Zero dependencies</span>
-  <span class="badge">13 hills + scoreboard</span>
+  <span class="badge">17 hills + scoreboard</span>
   <span class="badge">Docker</span>
  </div>
 </header>
@@ -126,10 +126,10 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
 </section>
 
 <section id="hills">
- <h2>The thirteen hills</h2>
+ <h2>The seventeen hills</h2>
  <p class="sub">Each hill is a self-contained vulnerable box: a foothold vulnerability, then a
  local privilege escalation to root. Every one is verified end to end by the smoke test.
- Hills 5-9 and 10/14/17/19 (LOTR, Tron, Avatar, and Harry Potter themed) are new and ship as an
+ Hills 5-19 (LOTR, Tron, Avatar, and Harry Potter themed) are new and ship as an
  <strong>alpha</strong>: validated by the smoke test, but not yet battle-tested in a live event.</p>
  <div class="grid g2">
   <div class="card">
@@ -209,6 +209,30 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
    <h3>SSRF and LFI relay</h3>
    <p>Harry Potter. The Owl Post relay fetches any URL and honours file scheme; leak the internal token, then drive the dispatch console.</p>
    <div class="meta"><span class="pill a">foothold: SSRF + LFI</span><span class="pill">privesc: root cron</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 11 // Light Cycle Arena <span class="pill">alpha</span></div>
+   <h3>Unauthenticated debug API</h3>
+   <p>Tron. A forgotten debug endpoint runs commands with no auth; a root loop then executes the ExecStart line of a world-writable unit file.</p>
+   <div class="meta"><span class="pill a">foothold: unauth RCE</span><span class="pill">privesc: writable unit</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 13 // RDA Ops Console <span class="pill">alpha</span></div>
+   <h3>Command injection</h3>
+   <p>Avatar. The sensor diagnostics field is concatenated straight into a shell command.</p>
+   <div class="meta"><span class="pill a">foothold: command injection</span><span class="pill">privesc: sudo dd</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 16 // Unobtainium Refinery <span class="pill">alpha</span></div>
+   <h3>Repair, then eval RCE</h3>
+   <p>Avatar. The refinery boots offline; repair the coolant mount, then the calibration formula is evaluated server-side.</p>
+   <div class="meta"><span class="pill a">foothold: repair + eval</span><span class="pill">privesc: sudo env</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 18 // Gringotts Vault <span class="pill">alpha</span></div>
+   <h3>Repair, then YAML deserialization</h3>
+   <p>Harry Potter. Rebuild the vault ledger, then the vault door parses a manifest with an unsafe YAML loader.</p>
+   <div class="meta"><span class="pill a">foothold: YAML deserialization</span><span class="pill">privesc: writable sudoers.d</span></div>
   </div>
  </div>
  <p class="sub">See the <a href="CHALLENGE-ROADMAP.md">20-challenge design roadmap</a> for what is planned next

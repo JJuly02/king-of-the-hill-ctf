@@ -1,0 +1,6 @@
+# Local demo of hill-18 (repair-gated YAML deserialization RCE -> root-installed sudoers.d).
+services:
+  hill-18:
+    build: .
+    container_name: koth-hill-18
+    ports: ["8098:80"]

@@ -53,11 +53,15 @@ machines you care about.
 | hill-14 | Avatar Link Unit (Avatar) | SQLi auth bypass → console RCE | `sudo perl` (GTFOBins) |
 | hill-17 | Hogwarts Portal (Harry Potter) | SSTI (spell portal) → RCE | `sudo python3` (GTFOBins) |
 | hill-19 | Ministry of Magic (Harry Potter) | SSRF + LFI → token → RCE | world-writable root cron |
+| hill-11 | Light Cycle Arena (Tron) | unauth debug API → RCE | writable unit `ExecStart` (root loop) |
+| hill-13 | RDA Ops Console (Avatar) | command injection | `sudo dd` (GTFOBins, read/write) |
+| hill-16 | Unobtainium Refinery (Avatar) | repair coolant mount → `eval` RCE | `sudo env` (GTFOBins) |
+| hill-18 | Gringotts Vault (Harry Potter) | repair ledger → YAML deserialization | root-installed `sudoers.d` |
 
-Hills 5-9 and 10/14/17/19 are new and ship as an **alpha**: each is validated end to end
-by the smoke test, but they have not yet been battle-tested in a live event. The
-[design roadmap](docs/CHALLENGE-ROADMAP.md) sketches the rest of challenges 10-20; hill ports
-are `8080 + N` (so the built hills listen on 8081-8090, 8094, 8097, 8099).
+Hills 5-19 are new and ship as an **alpha**: each is validated end to end by the smoke test,
+but they have not yet been battle-tested in a live event. The
+[design roadmap](docs/CHALLENGE-ROADMAP.md) sketches the rest (12, 15, 20); hill ports are
+`8080 + N` (so the built hills listen on 8081-8091, 8093-8094, 8096-8099).
 
 Each hill's `README.md` describes it in detail. Full walkthroughs are in
 [SOLUTIONS.md](SOLUTIONS.md).

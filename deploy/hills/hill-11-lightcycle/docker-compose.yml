@@ -1,0 +1,6 @@
+# Local demo of hill-11 (unauth debug API RCE -> writable unit ExecStart run by root).
+services:
+  hill-11:
+    build: .
+    container_name: koth-hill-11
+    ports: ["8091:80"]

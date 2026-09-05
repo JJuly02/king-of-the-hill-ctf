@@ -154,5 +154,53 @@
     "hill_id": "hill-19",
     "kind": "root",
     "flag": "CTF{r00t_cr0n_wr1t4bl3_m1n1stry}"
+  },
+  {
+    "flag_id": "hill-11-user",
+    "hill_id": "hill-11",
+    "kind": "user",
+    "flag": "CTF{unauth_d3bug_l1ght_cycl3}"
+  },
+  {
+    "flag_id": "hill-11-root",
+    "hill_id": "hill-11",
+    "kind": "root",
+    "flag": "CTF{wr1t4bl3_un1t_3x3cst4rt_r00t}"
+  },
+  {
+    "flag_id": "hill-13-user",
+    "hill_id": "hill-13",
+    "kind": "user",
+    "flag": "CTF{cmd_1nj_rd4_s3ns0r_d14g}"
+  },
+  {
+    "flag_id": "hill-13-root",
+    "hill_id": "hill-13",
+    "kind": "root",
+    "flag": "CTF{sud0_dd_r34d_wr1t3_r00t}"
+  },
+  {
+    "flag_id": "hill-16-user",
+    "hill_id": "hill-16",
+    "kind": "user",
+    "flag": "CTF{r3p41r_3v4l_unobt41n1um}"
+  },
+  {
+    "flag_id": "hill-16-root",
+    "hill_id": "hill-16",
+    "kind": "root",
+    "flag": "CTF{sud0_3nv_r00t_r3f1n3ry}"
+  },
+  {
+    "flag_id": "hill-18-user",
+    "hill_id": "hill-18",
+    "kind": "user",
+    "flag": "CTF{y4ml_uns4f3_l04d_g0bl1ns}"
+  },
+  {
+    "flag_id": "hill-18-root",
+    "hill_id": "hill-18",
+    "kind": "root",
+    "flag": "CTF{r00t_1nst4lls_sud03rs_gr1ng0tts}"
   }
 ]

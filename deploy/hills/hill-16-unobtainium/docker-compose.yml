@@ -1,0 +1,6 @@
+# Local demo of hill-16 (repair-gated eval RCE -> sudo env privesc).
+services:
+  hill-16:
+    build: .
+    container_name: koth-hill-16
+    ports: ["8096:80"]

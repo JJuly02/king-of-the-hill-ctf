@@ -30,14 +30,14 @@ two boxes share an entry or a privesc).
 | **8** | **Isengard Forge** | **LOTR** | **weak-cred CI console → RCE** | **capability `cap_setuid`** | **built** |
 | **9** | **Grid Portal (I/O Tower)** | **Tron** | **SSTI (template injection)** | **`sudo sed`** | **built** |
 | **10** | **MCP Core** | **Tron** | **pickle deserialization RCE** | **SUID `find`** | **built** |
-| 11 | Light Cycle Arena | Tron | unauth debug API → RCE | writable `.service` file | - |
+| **11** | **Light Cycle Arena** | **Tron** | **unauth debug API → RCE** | **writable unit `ExecStart`** | **built** |
 | 12 | Flynn's Arcade | Tron | LFI + log poisoning → RCE | `sudo`/PATH in root cron | repair (VM: grub) |
-| 13 | RDA Ops Console | Avatar | command injection | `sudo tar`/`find` | - |
+| **13** | **RDA Ops Console** | **Avatar** | **command injection** | **`sudo dd`** | **built** |
 | **14** | **Avatar Link Unit** | **Avatar** | **SQLi auth bypass → console RCE** | **`sudo perl`** | **built** |
 | 15 | Eywa Network | Avatar | SSRF → internal creds → RCE | exposed Docker socket | - |
-| 16 | Unobtainium Refinery | Avatar | repair mount/config → `eval` RCE | writable `/etc/passwd` | repair |
+| **16** | **Unobtainium Refinery** | **Avatar** | **repair mount → `eval` RCE** | **`sudo env`** | **built (repair)** |
 | **17** | **Hogwarts Portal** | **Harry Potter** | **SSTI ("spells") → RCE** | **`sudo python3`** | **built** |
-| 18 | Gringotts Vault | Harry Potter | repair DB → deserialization RCE | writable `sudoers.d` | repair |
+| **18** | **Gringotts Vault** | **Harry Potter** | **repair ledger → YAML deserialization** | **root-installed `sudoers.d`** | **built (repair)** |
 | **19** | **Ministry of Magic** | **Harry Potter** | **SSRF + LFI → RCE** | **root cron (writable jobs)** | **built** |
 | 20 | Room of Requirement | Harry Potter | hidden ("Marauder's Map") debug → RCE | `cap_setuid`/PATH | repair (VM: emergency mode) |
 

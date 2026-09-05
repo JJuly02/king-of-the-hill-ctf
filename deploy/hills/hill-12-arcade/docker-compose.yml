@@ -1,0 +1,7 @@
+# Local demo of hill-12 (repair-gated LFI + log poisoning -> RCE -> PATH-hijack root cron).
+# On a real VM the repair is a genuine broken grub.cfg / emergency mode; here it is simulated.
+services:
+  hill-12:
+    build: .
+    container_name: koth-hill-12
+    ports: ["8092:80"]

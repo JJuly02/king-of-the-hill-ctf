@@ -1,0 +1,7 @@
+# Local demo of hill-20 (repair-gated hidden debug RCE -> cap_dac_override privesc).
+# On a real VM the repair is a genuine emergency mode (broken grub.cfg/fstab); here simulated.
+services:
+  hill-20:
+    build: .
+    container_name: koth-hill-20
+    ports: ["8100:80"]

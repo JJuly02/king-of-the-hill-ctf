@@ -57,11 +57,15 @@ machines you care about.
 | hill-13 | RDA Ops Console (Avatar) | command injection | `sudo dd` (GTFOBins, read/write) |
 | hill-16 | Unobtainium Refinery (Avatar) | repair coolant mount → `eval` RCE | `sudo env` (GTFOBins) |
 | hill-18 | Gringotts Vault (Harry Potter) | repair ledger → YAML deserialization | root-installed `sudoers.d` |
+| hill-12 | Flynn's Arcade (Tron) | repair boot → LFI + log poisoning | PATH hijack (root cron) |
+| hill-15 | Eywa Network (Avatar) | SSRF → creds → RCE | Docker-socket host escape (build-only) |
+| hill-20 | Room of Requirement (Harry Potter) | repair → hidden debug RCE | capability `cap_dac_override` |
 
-Hills 5-19 are new and ship as an **alpha**: each is validated end to end by the smoke test,
-but they have not yet been battle-tested in a live event. The
-[design roadmap](docs/CHALLENGE-ROADMAP.md) sketches the rest (12, 15, 20); hill ports are
-`8080 + N` (so the built hills listen on 8081-8091, 8093-8094, 8096-8099).
+Hills 5-20 are new and ship as an **alpha**: each is validated end to end by the smoke test
+(except **hill-15**, whose escalation is a Docker-socket host escape - it is build-verified
+only and must be run on a disposable host). Not yet battle-tested in a live event. This
+completes the 20-challenge [design roadmap](docs/CHALLENGE-ROADMAP.md). Hill ports are
+`8080 + N` (so the built hills listen on 8081-8100).
 
 Each hill's `README.md` describes it in detail. Full walkthroughs are in
 [SOLUTIONS.md](SOLUTIONS.md).

@@ -31,15 +31,15 @@ two boxes share an entry or a privesc).
 | **9** | **Grid Portal (I/O Tower)** | **Tron** | **SSTI (template injection)** | **`sudo sed`** | **built** |
 | **10** | **MCP Core** | **Tron** | **pickle deserialization RCE** | **SUID `find`** | **built** |
 | **11** | **Light Cycle Arena** | **Tron** | **unauth debug API → RCE** | **writable unit `ExecStart`** | **built** |
-| 12 | Flynn's Arcade | Tron | LFI + log poisoning → RCE | `sudo`/PATH in root cron | repair (VM: grub) |
+| **12** | **Flynn's Arcade** | **Tron** | **repair boot → LFI + log poisoning** | **PATH hijack (root cron)** | **built (repair)** |
 | **13** | **RDA Ops Console** | **Avatar** | **command injection** | **`sudo dd`** | **built** |
 | **14** | **Avatar Link Unit** | **Avatar** | **SQLi auth bypass → console RCE** | **`sudo perl`** | **built** |
-| 15 | Eywa Network | Avatar | SSRF → internal creds → RCE | exposed Docker socket | - |
+| **15** | **Eywa Network** | **Avatar** | **SSRF → creds → RCE** | **Docker-socket host escape** | **built-only** |
 | **16** | **Unobtainium Refinery** | **Avatar** | **repair mount → `eval` RCE** | **`sudo env`** | **built (repair)** |
 | **17** | **Hogwarts Portal** | **Harry Potter** | **SSTI ("spells") → RCE** | **`sudo python3`** | **built** |
 | **18** | **Gringotts Vault** | **Harry Potter** | **repair ledger → YAML deserialization** | **root-installed `sudoers.d`** | **built (repair)** |
 | **19** | **Ministry of Magic** | **Harry Potter** | **SSRF + LFI → RCE** | **root cron (writable jobs)** | **built** |
-| 20 | Room of Requirement | Harry Potter | hidden ("Marauder's Map") debug → RCE | `cap_setuid`/PATH | repair (VM: emergency mode) |
+| **20** | **Room of Requirement** | **Harry Potter** | **repair → hidden debug RCE** | **`cap_dac_override`** | **built (repair)** |
 
 *(Erebor/Smaug/Hobbit note: if you prefer 5 distinct franchises over 4-per, swap one
 Avatar or LOTR slot for a Hobbit set - e.g. **Bag End** (upload → webshell / writable

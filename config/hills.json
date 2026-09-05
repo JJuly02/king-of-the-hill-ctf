@@ -15,5 +15,8 @@
   {"id":"hill-11","name":"Light Cycle Arena","service_host":"127.0.0.1","service_port":8091,"hmac_key":"changeme-hill-11","url":"http://localhost:8091"},
   {"id":"hill-13","name":"RDA Ops Console","service_host":"127.0.0.1","service_port":8093,"hmac_key":"changeme-hill-13","url":"http://localhost:8093"},
   {"id":"hill-16","name":"Unobtainium Refinery","service_host":"127.0.0.1","service_port":8096,"hmac_key":"changeme-hill-16","url":"http://localhost:8096"},
-  {"id":"hill-18","name":"Gringotts Vault","service_host":"127.0.0.1","service_port":8098,"hmac_key":"changeme-hill-18","url":"http://localhost:8098"}
+  {"id":"hill-18","name":"Gringotts Vault","service_host":"127.0.0.1","service_port":8098,"hmac_key":"changeme-hill-18","url":"http://localhost:8098"},
+  {"id":"hill-12","name":"Flynn's Arcade","service_host":"127.0.0.1","service_port":8092,"hmac_key":"changeme-hill-12","url":"http://localhost:8092"},
+  {"id":"hill-15","name":"Eywa Network","service_host":"127.0.0.1","service_port":8095,"hmac_key":"changeme-hill-15","url":"http://localhost:8095"},
+  {"id":"hill-20","name":"Room of Requirement","service_host":"127.0.0.1","service_port":8100,"hmac_key":"changeme-hill-20","url":"http://localhost:8100"}
 ]

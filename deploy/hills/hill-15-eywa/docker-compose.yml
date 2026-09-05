@@ -1,0 +1,17 @@
+# hill-15 Eywa Network  ***  DANGER: HOST ESCAPE  ***
+#
+# This box's privesc is an exposed Docker socket. The volume below hands the container full
+# control of the host's Docker daemon, which is a complete host takeover primitive. DO NOT
+# run this on any host you care about (and never alongside other services, e.g. a dev box).
+# Run it ONLY on a disposable, isolated VM dedicated to this challenge.
+#
+# The mount is left commented out on purpose so `docker compose build` and a casual
+# `up` do NOT arm the escape. To actually run the challenge on a disposable host, uncomment
+# the volume.
+services:
+  hill-15:
+    build: .
+    container_name: koth-hill-15
+    ports: ["8095:80"]
+    # volumes:
+    #   - /var/run/docker.sock:/var/run/docker.sock   # <-- arms the host escape; disposable hosts ONLY

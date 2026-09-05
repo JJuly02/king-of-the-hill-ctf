@@ -104,7 +104,7 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
  <div class="badges">
   <span class="badge">Pure Python stdlib</span>
   <span class="badge">Zero dependencies</span>
-  <span class="badge">17 hills + scoreboard</span>
+  <span class="badge">20 hills + scoreboard</span>
   <span class="badge">Docker</span>
  </div>
 </header>
@@ -126,11 +126,12 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
 </section>
 
 <section id="hills">
- <h2>The seventeen hills</h2>
+ <h2>The twenty hills</h2>
  <p class="sub">Each hill is a self-contained vulnerable box: a foothold vulnerability, then a
- local privilege escalation to root. Every one is verified end to end by the smoke test.
- Hills 5-19 (LOTR, Tron, Avatar, and Harry Potter themed) are new and ship as an
- <strong>alpha</strong>: validated by the smoke test, but not yet battle-tested in a live event.</p>
+ local privilege escalation to root. Hills 5-20 (LOTR, Tron, Avatar, and Harry Potter themed)
+ are new and ship as an <strong>alpha</strong>: validated by the smoke test, but not yet
+ battle-tested in a live event. All are verified end to end by the smoke test except hill-15,
+ whose escalation is a host escape (see its note) and is build-verified only.</p>
  <div class="grid g2">
   <div class="card">
    <div class="k">Hill 1 // NetOps Console</div>
@@ -234,9 +235,28 @@ footer .mono{font-family:var(--mono);letter-spacing:1px}
    <p>Harry Potter. Rebuild the vault ledger, then the vault door parses a manifest with an unsafe YAML loader.</p>
    <div class="meta"><span class="pill a">foothold: YAML deserialization</span><span class="pill">privesc: writable sudoers.d</span></div>
   </div>
+  <div class="card">
+   <div class="k">Hill 12 // Flynn's Arcade <span class="pill">alpha</span></div>
+   <h3>Repair, then LFI + log poisoning</h3>
+   <p>Tron. Fix the boot record, then a local file include plus a poisonable access log lead to RCE; a root cron runs a hijackable PATH.</p>
+   <div class="meta"><span class="pill a">foothold: LFI + log poisoning</span><span class="pill">privesc: PATH hijack</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 15 // Eywa Network <span class="pill">build-only</span></div>
+   <h3>SSRF, then Docker-socket host escape</h3>
+   <p>Avatar. SSRF leaks internal creds for RCE; the escalation is an exposed Docker socket (full host takeover), so this box is build-verified only and run on a disposable host.</p>
+   <div class="meta"><span class="pill a">foothold: SSRF</span><span class="pill">privesc: docker.sock escape</span></div>
+  </div>
+  <div class="card">
+   <div class="k">Hill 20 // Room of Requirement <span class="pill">alpha</span></div>
+   <h3>Repair, then hidden debug RCE</h3>
+   <p>Harry Potter. Clear the emergency, then a hidden endpoint runs commands once you speak the passphrase; a capability bypasses file permissions.</p>
+   <div class="meta"><span class="pill a">foothold: hidden debug RCE</span><span class="pill">privesc: cap_dac_override</span></div>
+  </div>
  </div>
- <p class="sub">See the <a href="CHALLENGE-ROADMAP.md">20-challenge design roadmap</a> for what is planned next
- (Tron, Avatar, and Harry Potter sets) and the repair-to-capture pattern.</p>
+ <p class="sub">The full <a href="CHALLENGE-ROADMAP.md">20-challenge design roadmap</a> is now built (LOTR,
+ Tron, Avatar, and Harry Potter sets), including the repair-to-capture pattern and bonus ideas
+ for going further.</p>
 </section>
 
 <section id="quickstart">
